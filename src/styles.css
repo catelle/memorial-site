@@ -21,3 +21,8 @@
 .portrait-frame{background:linear-gradient(145deg,#3f7cff,#173b9c);box-shadow:20px 24px 0 #dce8ff}
 .hero-glow{background:radial-gradient(circle at 70% 45%,rgba(36,87,214,.15),transparent 56%)}
 .gold,.site-header nav button:last-child{box-shadow:0 8px 20px rgba(36,87,214,.18)}
+:root{--gold:#a87916;--gold-deep:#7b5608}
+label,.eyebrow,.dates,.programme-meta,.timeline-row time,.timeline-row>svg,.pillar>span,.activity span,.tribute-card .quote,.stats strong{color:var(--gold)}
+.programme-hero h1 em,.page-hero h1 em{color:var(--gold)}
+.dates i{background:var(--gold)}
+.seal{border-bottom:3px solid var(--gold)}
