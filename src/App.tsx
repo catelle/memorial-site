@@ -4,7 +4,7 @@ import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, Download, H
 type View = 'memory' | 'programme' | 'tributes' | 'family' | 'contact';
 type Tribute = { _id?: string; name: string; relation: string; message: string; city: string; date: string };
 type MemorialUpdate = { _id?: string; title: string; date: string; location: string; description: string; imageUrl: string };
-const assets = ['/memories/portrait.jpg', ...Array.from({ length: 42 }, (_, i) => `/memories/photo-${String(i + 1).padStart(2, '0')}.jpg`)];
+const assets = ['/memories/photo-03.jpg', ...Array.from({ length: 42 }, (_, i) => `/memories/photo-${String(i + 1).padStart(2, '0')}.jpg`)];
 const profile = { name: 'KOUANHOU Stéphanie Donald', birth: 'Née le 12 décembre 1996', email: 'stephaniekouanhou@gmail.com' };
 
 function Header({ view, onNavigate, onMenu }: { view: View; onNavigate: (view: View) => void; onMenu: () => void }) {
