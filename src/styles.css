@@ -26,3 +26,139 @@ label,.eyebrow,.dates,.programme-meta,.timeline-row time,.timeline-row>svg,.pill
 .programme-hero h1 em,.page-hero h1 em{color:var(--gold)}
 .dates i{background:var(--gold)}
 .seal{border-bottom:3px solid var(--gold)}
+
+/* French interface overrides */
+.site-header nav button{font-size:14px}
+.site-header nav button::before,.site-header nav button:last-child::after{content:none}
+.mobile-menu button:not(:first-child){font-size:18px}
+.mobile-menu button:not(:first-child)::after{content:none}
+.form-error{margin-top:18px;color:#a33b3b!important;font-size:13px!important}
+
+/* Experience section: give the timeline room and make the summary card easier to scan. */
+.venue{grid-template-columns:minmax(0,1fr) minmax(300px,360px);gap:clamp(40px,8vw,120px);align-items:start}
+.venue>div:first-child{min-width:0}
+.venue>div:first-child>h2{max-width:620px}
+.venue .timeline-row{grid-template-columns:145px minmax(0,1fr);gap:28px;padding:25px 0}
+.venue-card{padding:30px;border-radius:18px;box-shadow:0 16px 35px rgba(36,87,214,.08)}
+.venue-card h3{margin:14px 0 18px;font-size:24px;letter-spacing:-.04em}
+.venue-card p{line-height:1.75}
+@media(max-width:800px){.venue{grid-template-columns:1fr;gap:35px}.venue-card{max-width:520px;width:100%}}
+
+/* Hero banner inspired by the supplied memorial reference. */
+.hero{width:100%;max-width:none;min-height:470px;margin:0;padding:52px max(32px,calc((100% - 1160px)/2));grid-template-columns:minmax(0,1fr) minmax(280px,380px);grid-template-rows:auto auto auto auto auto auto;grid-template-areas:"eyebrow portrait" "title portrait" "dates portrait" "epitaph portrait" "welcome portrait" "actions portrait";column-gap:70px;row-gap:0;background-image:linear-gradient(90deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.9) 46%,rgba(255,255,255,.58) 100%),url('/memories/photo-31.jpg');background-position:center;background-size:cover}
+.hero-glow{display:none}
+.hero .eyebrow{grid-area:eyebrow;align-self:end;margin-bottom:10px}
+.hero h1{grid-area:title;align-self:center;max-width:760px;margin:0;color:#70354e;font-size:clamp(46px,6vw,78px);letter-spacing:-.065em}
+.hero .dates{grid-area:dates;margin-top:10px}
+.hero .epitaph{grid-area:epitaph;margin:14px 0 0;max-width:600px;font-size:18px}
+.hero .welcome{grid-area:welcome;max-width:600px;margin:14px 0 0;font-size:15px;line-height:1.55}
+.hero .hero-actions{grid-area:actions;margin-top:22px}
+.portrait-frame{grid-area:portrait;grid-row:auto;grid-column:auto;justify-self:center;align-self:center;width:min(100%,330px);aspect-ratio:1;padding:0;border:4px solid #fff;border-radius:50%;background:#d9b8b0;overflow:hidden;box-shadow:0 0 0 2px rgba(112,53,78,.18),0 18px 36px rgba(55,34,43,.2);z-index:1}
+.portrait-frame img{height:100%;border-radius:50%;object-position:center;object-fit:cover}
+.portrait-frame .seal{display:none}
+@media(max-width:800px){.hero{min-height:0;width:100%;padding:58px 24px 68px;grid-template-columns:1fr;grid-template-rows:auto;grid-template-areas:"eyebrow" "title" "dates" "portrait" "epitaph" "welcome" "actions";gap:0;text-align:center;background-image:linear-gradient(rgba(255,255,255,.88),rgba(255,255,255,.94)),url('/memories/photo-31.jpg')}.hero .eyebrow{justify-self:center}.hero h1{font-size:clamp(44px,11vw,66px);margin-top:5px}.hero .dates,.hero .epitaph,.hero .welcome{justify-self:center}.hero .portrait-frame{width:min(72vw,300px);margin:28px auto 22px}.hero .hero-actions{justify-content:center;margin-top:22px}.hero .hero-actions button{width:auto}}
+
+.gallery-grid img{cursor:zoom-in}
+.gallery-lightbox{position:fixed;inset:0;z-index:50;display:grid;grid-template-columns:72px minmax(0,1fr) 72px;grid-template-rows:minmax(0,1fr) 92px;align-items:center;padding:42px 40px 28px;background:rgba(20,18,24,.94);backdrop-filter:blur(12px)}
+.lightbox-figure{grid-column:2;grid-row:1;display:grid;place-items:center;gap:12px;width:100%;height:100%;margin:0}
+.lightbox-figure img{width:100%;height:100%;object-fit:contain;max-height:calc(100vh - 190px);border-radius:10px;box-shadow:0 18px 55px rgba(0,0,0,.3)}
+.lightbox-figure figcaption{color:#fff;font-size:13px;letter-spacing:.04em}
+.lightbox-close,.lightbox-arrow{display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:50%;transition:.2s}
+.lightbox-close:hover,.lightbox-arrow:hover{background:var(--gold);transform:scale(1.05)}
+.lightbox-close{position:absolute;top:18px;right:22px;width:42px;height:42px}
+.lightbox-arrow{width:50px;height:50px;z-index:1}
+.lightbox-prev{grid-column:1;grid-row:1;justify-self:start}.lightbox-next{grid-column:3;grid-row:1;justify-self:end}
+.lightbox-thumbnails{grid-column:1/-1;grid-row:2;display:flex;justify-content:center;gap:9px;overflow-x:auto;padding:12px 60px 0}
+.lightbox-thumbnails button{flex:0 0 64px;width:64px;height:58px;padding:0;border:2px solid transparent;border-radius:7px;overflow:hidden;opacity:.55;background:transparent;transition:.2s}
+.lightbox-thumbnails button:hover,.lightbox-thumbnails button.selected{border-color:var(--gold);opacity:1}.lightbox-thumbnails img{width:100%;height:100%;object-fit:cover}
+@media(max-width:700px){.gallery-lightbox{grid-template-columns:44px minmax(0,1fr) 44px;padding:48px 12px 18px}.lightbox-arrow{width:38px;height:38px}.lightbox-thumbnails{padding-inline:0}.lightbox-thumbnails button{flex-basis:52px;width:52px;height:46px}.lightbox-figure img{max-height:calc(100vh - 160px)}}
+
+/* Compact memorial hero */
+.hero{min-height:350px;padding-top:30px;padding-bottom:34px;grid-template-columns:minmax(0,1fr) minmax(230px,300px);column-gap:48px}
+.hero h1{font-size:clamp(42px,5.2vw,66px);line-height:.98}
+.hero .eyebrow{margin-bottom:4px}
+.hero .dates{margin-top:7px;font-size:15px}
+.hero .epitaph{margin-top:10px;font-size:16px}
+.hero .welcome{margin-top:8px;font-size:14px;line-height:1.45}
+.hero .hero-actions{margin-top:14px}
+.portrait-frame{width:min(100%,250px)}
+@media(max-width:800px){.hero{min-height:0;padding:40px 24px 50px}.hero .portrait-frame{width:min(62vw,240px);margin:20px auto 16px}.hero .hero-actions{margin-top:16px}}
+
+/* Floral night theme */
+:root{--ink:#fff4f5;--muted:#c8aeb7;--line:#47202f;--pink:#ef416d;--pink-deep:#bc1f4f;--soft:#24101a;--paper:#1a0c13;--gold:#ff9aaa;--gold-deep:#f05b78;color-scheme:dark}
+body{background:#10080d;color:var(--ink)}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(rgba(16,8,13,.92),rgba(16,8,13,.96)),url('/floral-memorial-theme.png') center/cover;opacity:.22}
+.site-header{background:rgba(16,8,13,.9);border-bottom-color:rgba(239,65,109,.24)}
+.brand,.site-header nav button{color:var(--ink)}
+.monogram{background:var(--pink)}
+.gold{background:var(--pink);color:#fff;box-shadow:0 10px 25px rgba(239,65,109,.22)}
+.gold:hover{background:var(--pink-deep)}
+.paper{background:#1f0d16;border-color:#5b293b;color:#ffb1bf}
+.paper:hover{border-color:var(--pink);background:#321421}
+.hero{background-image:linear-gradient(90deg,rgba(16,8,13,.9) 0%,rgba(16,8,13,.68) 54%,rgba(16,8,13,.35) 100%),url('/floral-memorial-theme.png');background-position:center;background-size:cover}
+.hero h1{color:#ffe5e9}
+.hero .epitaph{color:#fff0f2}
+.portrait-frame{border-color:#ffe9ed;background:linear-gradient(145deg,#ef416d,#8b173c);box-shadow:0 0 0 2px rgba(239,65,109,.32),0 18px 36px rgba(0,0,0,.4)}
+.stats{background:#492033;border-color:#492033}
+.stats div{background:rgba(35,15,25,.94)}
+.story,.timeline,.tribute-grid,.admin-grid{color:var(--ink)}
+.pillars,.admin-card,.tribute-card,.venue-card{background:rgba(27,12,20,.94);border-color:var(--line)}
+.pillar,.timeline-row,.language-item,.interest-block{border-color:var(--line)}
+.programme-hero,.page-hero{background-image:linear-gradient(90deg,rgba(16,8,13,.96),rgba(35,13,24,.88)),url('/floral-memorial-theme.png');background-size:cover;background-position:center}
+.programme-hero h1,.page-hero h1{color:#fff0f2}
+.venue{background:rgba(35,15,25,.95)}
+.gallery{position:relative;isolation:isolate}
+.gallery::before{content:'';position:absolute;inset:30px 0 70px;z-index:-1;border-block:1px solid rgba(239,65,109,.16);background:linear-gradient(90deg,rgba(16,8,13,.9),rgba(16,8,13,.62)),url('/floral-memorial-theme.png') center/cover;opacity:.72}
+.gallery-grid img{border-color:#5b293b}
+.site-footer{background:#0b0609;border-top-color:#47202f;color:#b998a2}
+.modal-backdrop{background:rgba(8,4,7,.88)}
+.modal{background:#1e0d16;border-color:#47202f}
+.modal input,.modal textarea{background:#12080d;border-color:#542536;color:var(--ink)}
+.mobile-menu{background:#160a10;color:var(--ink)}
+@media(max-width:800px){.hero{background-image:linear-gradient(rgba(16,8,13,.82),rgba(16,8,13,.94)),url('/floral-memorial-theme.png')}}
+
+/* Use the supplied flower photographs across the visual system. */
+body::before{background-image:linear-gradient(rgba(16,8,13,.9),rgba(16,8,13,.95)),url('/memories/flowerssteph3.jpeg')}
+.hero{background-image:linear-gradient(90deg,rgba(16,8,13,.9) 0%,rgba(16,8,13,.68) 54%,rgba(16,8,13,.36) 100%),url('/memories/flowers-steph6.jpeg')}
+.programme-hero,.page-hero{background-image:linear-gradient(90deg,rgba(16,8,13,.94),rgba(35,13,24,.82)),url('/memories/rose.jpeg')}
+.gallery::before{background-image:linear-gradient(90deg,rgba(16,8,13,.9),rgba(16,8,13,.58)),url('/memories/flowersteph5.jpeg')}
+@media(max-width:800px){.hero{background-image:linear-gradient(rgba(16,8,13,.82),rgba(16,8,13,.94)),url('/memories/flowers-steph6.jpeg')}}
+
+/* Remove the legacy English CSS labels; the React labels are already French. */
+.site-header nav button::before{content:none!important;display:none!important}
+.site-header nav button:last-child::after{content:none!important;display:none!important}
+.mobile-menu button:not(:first-child)::after{content:none!important;display:none!important}
+
+/* Rotate the supplied flower photographs between major sections. */
+.story{background-image:linear-gradient(90deg,rgba(16,8,13,.97),rgba(16,8,13,.88)),url('/memories/flower%20steph2.jpeg');background-size:cover;background-position:center}
+.programme-hero{background-image:linear-gradient(90deg,rgba(16,8,13,.94),rgba(35,13,24,.78)),url('/memories/rose.jpeg')}
+.page-hero{background-image:linear-gradient(90deg,rgba(16,8,13,.94),rgba(35,13,24,.78)),url('/memories/flowersteph5.jpeg')}
+.gallery::before{background-image:linear-gradient(90deg,rgba(16,8,13,.9),rgba(16,8,13,.52)),url('/memories/flowerssteph3.jpeg')}
+
+/* Make the experience section use the full viewport width instead of compressing its first column. */
+.venue{width:100%;max-width:none;box-sizing:border-box;grid-template-columns:minmax(0,1.6fr) minmax(340px,.85fr);padding-left:max(32px,calc((100vw - 1160px)/2));padding-right:max(32px,calc((100vw - 1160px)/2));gap:clamp(48px,7vw,110px)}
+.venue>div:first-child{width:100%;min-width:0}
+.venue>div:first-child>h2{max-width:760px}
+.venue-card{width:100%;max-width:420px;justify-self:end}
+@media(max-width:800px){.venue{grid-template-columns:1fr;padding-left:24px;padding-right:24px}.venue-card{max-width:520px;justify-self:start}}
+
+/* Center the hero statistics inside each equal-width cell. */
+.stats div{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:108px}
+.stats strong,.stats span{width:100%;text-align:center}
+.document-download{text-decoration:none}
+.contact-header{white-space:nowrap}
+.award-panel{display:flex;align-items:center;justify-content:space-between;gap:34px;margin-top:70px;margin-bottom:0;padding:30px 34px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(120deg,rgba(61,18,36,.95),rgba(28,10,19,.96))}
+.award-panel h2{margin:9px 0 10px;font-size:28px;letter-spacing:-.04em}.award-panel p{max-width:760px;color:var(--muted);font-size:15px;line-height:1.65}.award-panel .award-meta{margin-top:12px;color:var(--gold);font-size:12px}.award-panel .gold{flex:0 0 auto;white-space:nowrap;text-decoration:none}
+.memorial-updates{padding:84px 0;background:linear-gradient(90deg,rgba(16,8,13,.96),rgba(35,13,24,.84)),url('/memories/rose.jpeg') center/cover;border-top:1px solid rgba(239,65,109,.18)}
+.memorial-updates h2{margin:10px 0 28px;font-size:38px;letter-spacing:-.05em}.updates-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.update-card{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:rgba(27,12,20,.93)}.update-card img{width:100%;height:210px;object-fit:cover}.update-content{padding:22px}.update-content>span{color:var(--gold);font:11px 'DM Mono',monospace;text-transform:uppercase}.update-content h3{margin:8px 0;font-size:22px}.update-content p{color:var(--muted);font-size:14px;line-height:1.65}.update-location{display:flex;align-items:center;gap:6px;margin-bottom:8px;color:#ffd4db!important}
+.contact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding-top:82px;padding-bottom:100px}.contact-card{padding:30px;border:1px solid var(--line);border-radius:16px;background:rgba(27,12,20,.94)}.contact-card>svg{color:var(--gold)}.contact-card h2{margin:16px 0 10px;font-size:23px}.contact-card h3{margin:14px 0;font-size:20px}.contact-card p{margin-bottom:22px;color:var(--muted);font-size:14px;line-height:1.7}.contact-card a:not(.gold){color:var(--gold)}
+.update-form{display:grid;gap:13px;margin-top:22px}.update-form input,.update-form textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:#12080d;color:var(--ink);outline-color:var(--pink)}.update-form-row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+@media(max-width:800px){.award-panel{display:grid;margin-top:50px;padding:24px}.award-panel .gold{justify-self:start}.updates-grid,.contact-grid{grid-template-columns:1fr}.memorial-updates{padding:65px 0}.memorial-updates h2{font-size:32px}.update-form-row{grid-template-columns:1fr}}
+
+.video-memories{padding:86px 0 98px;background:linear-gradient(90deg,rgba(16,8,13,.97),rgba(32,12,23,.91)),url('/memories/flowersteph5.jpeg') center/cover;border-top:1px solid rgba(239,65,109,.2)}
+.video-intro{max-width:680px;margin:14px 0 28px;color:var(--muted);font-size:16px}
+.video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.video-card{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:rgba(27,12,20,.92);box-shadow:0 18px 40px rgba(0,0,0,.22)}
+.video-card video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#080508}
+.video-card>div{padding:22px 24px 25px}.video-card h3{font-size:20px;letter-spacing:-.03em}.video-card p{margin-top:7px;color:var(--muted);font-size:14px;line-height:1.65}
+@media(max-width:700px){.video-memories{padding:64px 0 72px}.video-grid{grid-template-columns:1fr}.video-card>div{padding:18px}}
