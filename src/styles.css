@@ -156,6 +156,29 @@ body::before{background-image:linear-gradient(rgba(255,255,255,.91),rgba(255,255
 .update-content>span,.award-panel .award-meta{color:var(--pink)}
 @media(max-width:800px){.hero{background-image:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.96)),url('/memories/flowers-steph6.jpeg')}}
 
+/* Restore the floral red / pink / black memorial theme. */
+:root{--ink:#fff4f5;--muted:#c8aeb7;--line:#47202f;--pink:#ef416d;--pink-deep:#bc1f4f;--soft:#24101a;--paper:#1a0c13;--gold:#ff9aaa;--gold-deep:#f05b78;color-scheme:dark}
+body{background:#10080d;color:var(--ink)}
+body::before{background-image:linear-gradient(rgba(16,8,13,.9),rgba(16,8,13,.95)),url('/memories/flowerssteph3.jpeg');opacity:.22}
+.site-header{background:rgba(16,8,13,.9);border-bottom-color:rgba(239,65,109,.24)}
+.brand,.site-header nav button{color:var(--ink)}
+.gold{background:var(--pink);color:#fff;box-shadow:0 10px 25px rgba(239,65,109,.22)}.gold:hover{background:var(--pink-deep)}
+.paper{background:#1f0d16;border-color:#5b293b;color:#ffb1bf}.paper:hover{border-color:var(--pink);background:#321421}
+.hero{background-image:linear-gradient(90deg,rgba(16,8,13,.9) 0%,rgba(16,8,13,.68) 54%,rgba(16,8,13,.35) 100%),url('/memories/flowers-steph6.jpeg')}
+.hero h1{color:#ffe5e9}.hero .epitaph{color:#fff0f2}
+.portrait-frame{border-color:#ffe9ed;background:linear-gradient(145deg,#ef416d,#8b173c);box-shadow:0 0 0 2px rgba(239,65,109,.32),0 18px 36px rgba(0,0,0,.4)}
+.stats{background:#492033;border-color:#492033}.stats div{background:rgba(35,15,25,.94)}
+.pillars,.admin-card,.tribute-card,.venue-card,.contact-card,.video-card,.update-card{background:rgba(27,12,20,.94);border-color:var(--line);box-shadow:0 16px 35px rgba(0,0,0,.22)}
+.programme-hero,.page-hero{background-image:linear-gradient(90deg,rgba(16,8,13,.94),rgba(35,13,24,.82)),url('/memories/rose.jpeg')}.programme-hero h1,.page-hero h1{color:#fff0f2}
+.venue{background:rgba(35,15,25,.95)}
+.gallery::before{background-image:linear-gradient(90deg,rgba(16,8,13,.9),rgba(16,8,13,.52)),url('/memories/flowerssteph3.jpeg')}
+.video-memories{background:linear-gradient(90deg,rgba(16,8,13,.97),rgba(32,12,23,.91)),url('/memories/flowersteph5.jpeg') center/cover}.memorial-updates{background:linear-gradient(90deg,rgba(16,8,13,.96),rgba(35,13,24,.84)),url('/memories/rose.jpeg') center/cover}
+.award-panel{background-image:linear-gradient(120deg,rgba(61,18,36,.96),rgba(28,10,19,.9)),url('/memories/excellence.jpeg')}
+.site-footer{background:#0b0609;border-top-color:#47202f;color:#b998a2}
+.modal-backdrop{background:rgba(8,4,7,.88)}.modal{background:#1e0d16;border-color:#47202f}.modal input,.modal textarea,.update-form input,.update-form textarea{background:#12080d;border-color:#542536;color:var(--ink)}
+.mobile-menu{background:#160a10;color:var(--ink)}.interest-tags span{background:var(--soft);color:var(--gold)}.update-content>span,.award-panel .award-meta{color:var(--gold)}
+@media(max-width:800px){.hero{background-image:linear-gradient(rgba(16,8,13,.82),rgba(16,8,13,.94)),url('/memories/flowers-steph6.jpeg')}}
+
 /* Remove the legacy English CSS labels; the React labels are already French. */
 .site-header nav button::before{content:none!important;display:none!important}
 .site-header nav button:last-child::after{content:none!important;display:none!important}
