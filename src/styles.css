@@ -1117,3 +1117,15 @@ select { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-
   .funeral-schedule li { grid-template-columns: 56px 1fr; }
 }
 .obseques-close .hero-actions { grid-area: auto; justify-content: center; margin-top: 0; }
+
+/* Tributes hero: candle on the right */
+.tributes-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; align-items: center; }
+.hero-candle { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.hero-candle .candle-stage { gap: 22px; padding: 10px 0 0; }
+.hero-candle .candle-row { max-width: 300px; }
+.hero-candle .candle-count { text-align: center; }
+.modal .modal-lead { margin: -8px 0 6px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+@media (max-width: 900px) {
+  .tributes-hero-grid { grid-template-columns: 1fr; }
+  .hero-candle { margin-top: 10px; }
+}

@@ -1,9 +1,8 @@
 import { CSSProperties, FormEvent, useMemo, useState } from 'react';
-import { AlertCircle, ArrowRight, Check, Flame, Heart, MapPin, Search, X } from 'lucide-react';
+import { AlertCircle, Check, Flame, Heart, MapPin, MessageCircle, Search, X } from 'lucide-react';
 import { Tribute } from '../api';
-import { CandleInvite, CandleWall } from '../components/CandleWall';
+import { CandleInvite, HeroCandle } from '../components/CandleWall';
 import { Flower } from '../components/Flower';
-import { PrizeEmblem } from '../components/PrizeEmblem';
 import { useReveal } from '../hooks';
 
 const delay = (i: number) => ({ '--d': i } as CSSProperties);
@@ -31,14 +30,15 @@ function TributeCard({ tribute, index }: { tribute: Tribute; index: number }) {
   );
 }
 
-export function Tributes({ name, tributes, onAdd, saving, error, onOpenPrize }: { name: string; tributes: Tribute[]; onAdd: (tribute: Tribute) => Promise<void>; saving: boolean; error: string; onOpenPrize: () => void }) {
+export function Tributes({ tributes, onAdd, saving, error }: { tributes: Tribute[]; onAdd: (tribute: Tribute) => Promise<void>; saving: boolean; error: string }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   const [query, setQuery] = useState('');
   const [order, setOrder] = useState<'recent' | 'oldest'>('recent');
   const [formError, setFormError] = useState('');
   const [invite, setInvite] = useState<CandleInvite | null>(null);
-  const goToCandles = () => window.setTimeout(() => document.getElementById('bougies')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  const openCandle = (name = '') => setInvite(current => ({ name, n: (current?.n ?? 0) + 1 }));
+  const goToWall = () => document.getElementById('mur')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const [form, setForm] = useState({ name: '', relation: '', message: '', city: '' });
 
   const filtered = useMemo(() => {
@@ -54,8 +54,7 @@ export function Tributes({ name, tributes, onAdd, saving, error, onOpenPrize }: 
     setFormError('');
     try {
       await onAdd({ ...form, date: new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date()) });
-      setInvite(current => ({ name: form.name.trim(), n: (current?.n ?? 0) + 1 }));
-      goToCandles();
+      openCandle(form.name.trim());
       setForm({ name: '', relation: '', message: '', city: '' });
       setOpen(false);
       setSent(true);
@@ -66,13 +65,15 @@ export function Tributes({ name, tributes, onAdd, saving, error, onOpenPrize }: 
   return (
     <main>
       <section className="page-hero tributes-hero">
-        <div className="layout">
+        <div className="layout tributes-hero-grid">
+          <div>
           <label className="hero-in" style={delay(0)}>Mur des hommages</label>
           <h1 className="hero-in" style={delay(1)}>Des mots d’amour,<br /><em>pour ne jamais oublier.</em></h1>
           <p className="hero-in" style={delay(2)}>Partagez un souvenir, un message ou quelques mots pour Stéphanie et toutes les personnes qui l’aiment.</p>
           <div className="tributes-hero-row hero-in" style={delay(3)}>
             <button className="gold large" onClick={() => setOpen(true)}><Heart size={17} /> Laisser un hommage</button>
-            <button className="paper large" onClick={goToCandles}><Flame size={17} /> Allumer une bougie</button>
+            <button className="paper large" onClick={() => openCandle()}><Flame size={17} /> Allumer une bougie</button>
+            {tributes.length > 0 && <button className="paper large" onClick={goToWall}><MessageCircle size={17} /> Voir tous les hommages</button>}
             {tributes.length > 0 && (
               <div className="tribute-counters">
                 <span><strong>{tributes.length}</strong> {tributes.length > 1 ? 'messages' : 'message'}</span>
@@ -80,23 +81,11 @@ export function Tributes({ name, tributes, onAdd, saving, error, onOpenPrize }: 
               </div>
             )}
           </div>
-          {sent && <p className="form-success"><Check size={15} /> Merci, votre hommage a été publié. Vous pouvez maintenant allumer une bougie ci-dessous.</p>}
+          {sent && <p className="form-success"><Check size={15} /> Merci, votre hommage a été publié.</p>}
           {error && <p className="form-error">{error}</p>}
-        </div>
-      </section>
-
-      <CandleWall name={name} invite={invite} />
-
-      <section className="layout">
-        <button className="prize-banner" onClick={onOpenPrize} data-reveal>
-          <PrizeEmblem size="small" />
-          <div>
-            <label>Une mémoire qui inspire</label>
-            <h2>Prix d’Excellence et de Leadership Kouanhou Stéphanie Donald</h2>
-            <p>Institué au Lycée Bilingue de Baleng pour récompenser chaque année les élèves qui allient excellence et sens du service.</p>
           </div>
-          <span className="prize-banner-cta">Découvrir le Prix <ArrowRight size={16} /></span>
-        </button>
+          <div className="hero-in" style={delay(3)}><HeroCandle invite={invite} /></div>
+        </div>
       </section>
 
       {tributes.length > 0 && (
@@ -113,7 +102,7 @@ export function Tributes({ name, tributes, onAdd, saving, error, onOpenPrize }: 
         </div>
       )}
 
-      <section className="tribute-wall layout">
+      <section className="tribute-wall layout" id="mur">
         {tributes.length === 0 && !error && (
           <div className="tribute-empty" data-reveal>
             <Flower />
