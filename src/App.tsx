@@ -466,7 +466,7 @@ export default function App() {
         {view === 'programme' && <Programme />}
         {view === 'obseques' && <Obseques onNavigate={navigate} />}
         {view === 'prix' && <Prix email={profile.email} />}
-        {view === 'tributes' && <Tributes tributes={tributes} onAdd={addTribute} saving={saving} error={error} onOpenPrize={() => navigate('prix')} />}
+        {view === 'tributes' && <Tributes name={profile.name} tributes={tributes} onAdd={addTribute} saving={saving} error={error} onOpenPrize={() => navigate('prix')} />}
         {view === 'contact' && <Contact onNavigate={navigate} />}
         {view === 'family' && <Family onDataChanged={loadPublicData} onLeave={() => navigate('memory')} />}
         {view === 'memory' && (

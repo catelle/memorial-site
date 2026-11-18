@@ -47,7 +47,9 @@ function CandleList({ summary, onClose }: { summary: CandleSummary; onClose: () 
   );
 }
 
-export function CandleWall({ name }: { name: string }) {
+export type CandleInvite = { name: string; n: number };
+
+export function CandleWall({ name, invite }: { name: string; invite?: CandleInvite | null }) {
   const [summary, setSummary] = useState<CandleSummary | null>(null);
   const [lit, setLit] = useState(() => { try { return localStorage.getItem(LIT_KEY) === '1'; } catch { return false; } });
   const [formOpen, setFormOpen] = useState(false);
@@ -58,6 +60,12 @@ export function CandleWall({ name }: { name: string }) {
   const [error, setError] = useState('');
 
   useEffect(() => { api<CandleSummary>('/api/memorial/candles').then(setSummary).catch(() => setSummary(null)); }, []);
+  useEffect(() => {
+    if (!invite) return;
+    setForm(current => ({ ...current, name: current.name || invite.name }));
+    setFreshId('');
+    setFormOpen(true);
+  }, [invite?.n]);
 
   const light = async (event: FormEvent) => {
     event.preventDefault();
@@ -83,6 +91,7 @@ export function CandleWall({ name }: { name: string }) {
         <div data-reveal>
           <label>Une flamme pour elle</label>
           <h2>Allumez une bougie en mémoire de Stéphanie.</h2>
+          {invite && formOpen && <p className="candle-thanks">Merci pour votre hommage. Prolongez-le en allumant une bougie pour Stéphanie.</p>}
           <p>Chaque flamme est une pensée, une prière ou un souvenir offert à {name}. Ensemble, elles gardent sa lumière vivante.</p>
 
           {formOpen ? (
