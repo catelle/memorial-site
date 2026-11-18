@@ -1,10 +1,11 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowUp, CalendarDays, Check, ChevronRight, Download, Heart, Lock, MapPin, Menu, MessageCircle, Moon, Share2, Sun, X } from 'lucide-react';
+import { ArrowRight, ArrowUp, CalendarDays, Check, ChevronRight, Church, Download, Heart, Lock, MapPin, Users, Menu, MessageCircle, Moon, Share2, Sun, X } from 'lucide-react';
 import { api, MemorialUpdate, Tribute } from './api';
 import { Lightbox } from './components/Lightbox';
 import { Prix } from './pages/Prix';
 import { Tributes } from './pages/Tributes';
 import { Family } from './pages/Family';
+import { NextEventBanner, Obseques } from './pages/Obseques';
 import { useReveal, useTheme } from './hooks';
 import { HeroSlideshow } from './components/HeroSlideshow';
 import { Petals } from './components/Petals';
@@ -13,11 +14,11 @@ import { CandleWall } from './components/CandleWall';
 import { StoryPhotos } from './components/StoryPhotos';
 import { Divider, Flower } from './components/Flower';
 
-type View = 'memory' | 'programme' | 'prix' | 'tributes' | 'family' | 'contact';
-type NavTarget = View | 'gallery';
+type View = 'memory' | 'programme' | 'obseques' | 'prix' | 'tributes' | 'family' | 'contact';
+type NavTarget = View | 'gallery' | 'candles';
 
 /* Each view has its own URL so pages can be shared and the family space lives at /famille. */
-const paths: Record<View, string> = { memory: '/', programme: '/parcours', prix: '/prix', tributes: '/hommages', contact: '/contact', family: '/famille' };
+const paths: Record<View, string> = { memory: '/', programme: '/parcours', obseques: '/obseques', prix: '/prix', tributes: '/hommages', contact: '/contact', family: '/famille' };
 const viewFromPath = (pathname: string): View => {
   const clean = pathname.replace(/\/+$/, '') || '/';
   return (Object.entries(paths).find(([, path]) => path === clean)?.[0] as View) || 'memory';
@@ -26,7 +27,7 @@ const viewFromPath = (pathname: string): View => {
 const photo = (n: number) => `/memories/photo-${String(n).padStart(2, '0')}.jpg`;
 const galleryImages = Array.from({ length: 42 }, (_, i) => photo(i + 1));
 const heroPortraits = [3, 8, 29, 42, 14, 22, 9, 11].map(photo);
-const profile = { name: 'KOUANHOU Stéphanie Donald', birth: 'Née le 12 décembre 1996', email: 'stephaniekouanhou@gmail.com' };
+const profile = { name: 'KOUANHOU Stéphanie Donald', birth: 'Née le 12 décembre 1996', death: 'Décédée le 13 octobre 2026 au Canada', lifespan: '12 décembre 1996 — 13 octobre 2026', email: 'stephaniekouanhou@gmail.com' };
 const delay = (i: number) => ({ '--d': i } as CSSProperties);
 
 /* ---------- Chrome: header, progress, back-to-top, toast ---------- */
@@ -78,7 +79,7 @@ function ThemeToggle({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: (
   );
 }
 
-const navLinks: [NavTarget, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['gallery', 'Galerie'], ['prix', 'Le Prix'], ['tributes', 'Hommages']];
+const navLinks: [NavTarget, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['obseques', 'Obsèques'], ['gallery', 'Galerie'], ['prix', 'Le Prix'], ['tributes', 'Hommages']];
 
 function Header({ view, onNavigate, onMenu, onShare, theme, onToggleTheme }: { view: View; onNavigate: (target: NavTarget) => void; onMenu: () => void; onShare: () => void; theme: 'light' | 'dark'; onToggleTheme: () => void }) {
   const scrolled = useScrolled(24);
@@ -106,7 +107,7 @@ function Header({ view, onNavigate, onMenu, onShare, theme, onToggleTheme }: { v
 }
 
 function MobileMenu({ onClose, onNavigate }: { onClose: () => void; onNavigate: (target: NavTarget) => void }) {
-  const items: [NavTarget, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['gallery', 'Galerie'], ['prix', 'Le Prix'], ['tributes', 'Hommages'], ['contact', 'Contact famille']];
+  const items: [NavTarget, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['obseques', 'Obsèques'], ['gallery', 'Galerie'], ['prix', 'Le Prix'], ['tributes', 'Hommages'], ['contact', 'Contact famille']];
   return (
     <div className="mobile-menu" role="dialog" aria-modal="true">
       <button className="mobile-close" onClick={onClose} aria-label="Fermer le menu"><X /></button>
@@ -238,8 +239,10 @@ function Memory({ onNavigate, onOpen, tributeCount }: { onNavigate: (target: Nav
   const pillars = [
     ['Passionnée de sciences', 'Un parcours académique construit autour de la chimie et de l’excellence.'],
     ['Ingénieure diplômée', 'Diplômée de l’École Nationale Supérieure Polytechnique de Douala en 2023.'],
+    ['Une foi vivante', 'Chrétienne baptisée et confirmée à l’EEC, paroisse de Bafoussam Plateau.'],
+    ['Engagée auprès des autres', 'Membre de l’association Love Kamer Sister Canada/USA (LKS).'],
+    ['Épouse et mère', 'Mariée, elle laisse dans la peine son époux et ses enfants.'],
     ['Curieuse et ouverte', 'Une passion pour la lecture, les voyages et la découverte du monde.'],
-    ['Une présence précieuse', 'Une femme dont la mémoire reste vivante dans le cœur de ses proches.'],
   ];
   return (
     <main>
@@ -248,7 +251,7 @@ function Memory({ onNavigate, onOpen, tributeCount }: { onNavigate: (target: Nav
         <div className="eyebrow hero-in" style={delay(0)}><Flower />En hommage à Stéphanie</div>
         <HeroSlideshow images={heroPortraits} name={profile.name} />
         <h1 className="hero-in" style={delay(1)}>{profile.name}</h1>
-        <p className="dates hero-in" style={delay(2)}>{profile.birth}</p>
+        <p className="dates hero-in" style={delay(2)}>{profile.lifespan}</p>
         <p className="epitaph hero-in" style={delay(3)}>« Une vie guidée par le savoir, la passion et la générosité. »</p>
         <div className="welcome hero-in" style={delay(4)}>Cet espace est dédié à la mémoire de Stéphanie, à son parcours remarquable et aux souvenirs partagés avec sa famille, ses amis et toutes les personnes qui l’ont aimée.</div>
         <div className="hero-actions hero-in" style={delay(5)}>
@@ -256,6 +259,8 @@ function Memory({ onNavigate, onOpen, tributeCount }: { onNavigate: (target: Nav
           <button className="paper large" onClick={() => onNavigate('tributes')}><MessageCircle size={17} /> Laisser un hommage</button>
         </div>
       </section>
+
+      <NextEventBanner onOpen={() => onNavigate('obseques')} />
 
       <section className="stats">
         <div data-reveal style={delay(0)}><strong><CountUp value={1996} from={1950} /></strong><span>Année de naissance</span></div>
@@ -271,7 +276,8 @@ function Memory({ onNavigate, onOpen, tributeCount }: { onNavigate: (target: Nav
           <label>Le cœur de son histoire</label>
           <h2>Une femme brillante, passionnée et tournée vers l’avenir.</h2>
           <p>Stéphanie a construit son parcours avec détermination, de ses années au Lycée bilingue de Baleng à sa formation en chimie à l’Université de Dschang, puis à l’École Nationale Supérieure Polytechnique de Douala.</p>
-          <p>Ingénieure diplômée en 2023, elle a également enrichi son expérience par plusieurs stages et découvertes professionnelles dans les domaines de l’emploi, de la cosmétique et de la chimie.</p>
+          <p>Ingénieure en procédé industriel diplômée en 2023, elle a enrichi son expérience par plusieurs stages dans les domaines de l’emploi, de la cosmétique et de la chimie, avant de devenir laborantine au Complexe Multi-Industriel du Cameroun.</p>
+          <p>Chrétienne baptisée et confirmée à l’EEC de Bafoussam Plateau, membre de l’association Love Kamer Sister Canada/USA, elle était aussi épouse et mère. Elle s’est éteinte le 13 octobre 2026 au Canada, des suites d’une courte maladie.</p>
           <blockquote>« La connaissance grandit lorsqu’elle est partagée. »</blockquote>
           <button className="text-link" onClick={() => onNavigate('programme')}>Lire son parcours complet <ArrowRight size={15} /></button>
         </div>
@@ -292,8 +298,13 @@ function Memory({ onNavigate, onOpen, tributeCount }: { onNavigate: (target: Nav
 /* ---------- Other pages ---------- */
 
 function Programme() {
-  const education = [['2014', 'Lycée bilingue de Baleng', 'Baccalauréat C'], ['2017', 'Université de Dschang', 'Licence en chimie inorganique'], ['2018', 'Université de Dschang', 'Master I en chimie inorganique'], ['2023', 'École Nationale Supérieure Polytechnique de Douala', 'Ingénieure diplômée']];
-  const experience = [['Juillet 2016', 'Fond National de l’Emploi', 'Stage'], ['2016', 'Complexe Cosmétique de l’Ouest', 'Visite d’entreprise'], ['2021 – 2022', 'Fermencam', 'Stage'], ['2023 – 2024', 'CMIC de Yassa', 'Stage professionnel']];
+  const education = [
+    ['Primaire', 'École Primaire de Djeleng I', 'CEPE — Certificat d’Études Primaires Élémentaires'],
+    ['2008 – 2014', 'Lycée Bilingue de Baleng', 'Baccalauréat C · Chef de classe et première de sa classe'],
+    ['2014 – 2018', 'Université de Dschang', 'Licence en chimie inorganique (2017) · Master en chimie (2018)'],
+    ['2020 – 2023', 'École Nationale Supérieure Polytechnique de Douala', 'Ingénieure en procédé industriel (Génie des Procédés)'],
+  ];
+  const experience = [['Juillet 2016', 'Fonds National de l’Emploi', 'Stage'], ['2016', 'Complexe Cosmétique de l’Ouest', 'Visite d’entreprise'], ['2021 – 2022', 'Fermencam', 'Stage'], ['2023 – 2024', 'Complexe Multi-Industriel du Cameroun (CMIC), Yassa', 'Laborantine']];
   return (
     <main>
       <section className="programme-hero">
@@ -301,7 +312,7 @@ function Programme() {
           <label className="hero-in" style={delay(0)}>Parcours de Stéphanie</label>
           <h1 className="hero-in" style={delay(1)}>Une histoire<br /><em>de savoir et de passion.</em></h1>
           <p className="hero-in" style={delay(2)}>Retrouvez les étapes académiques et professionnelles qui ont marqué le parcours de {profile.name}.</p>
-          <div className="programme-meta hero-in" style={delay(3)}><span><CalendarDays size={17} /><b>{profile.birth}</b></span><span><MapPin size={17} /><b>Douala, Cameroun</b></span></div>
+          <div className="programme-meta hero-in" style={delay(3)}><span><CalendarDays size={17} /><b>{profile.birth}</b></span><span><Heart size={17} /><b>{profile.death}</b></span></div>
         </div>
       </section>
       <section className="timeline layout">
@@ -332,6 +343,26 @@ function Programme() {
           <p><b>Français :</b> parlé, lu et écrit — excellent<br /><b>Anglais :</b> lu et écrit — moyen</p>
           <p><b>Passionnée de :</b><br />Lecture<br />Voyages</p>
           <button className="text-link" onClick={() => { window.location.href = `mailto:${profile.email}`; }}>Écrire à la famille <ArrowRight size={15} /></button>
+        </div>
+      </section>
+      <section className="life-cards layout">
+        <div className="section-heading" data-reveal><div><label>Au-delà du parcours</label><h2>Sa foi, ses engagements, sa famille.</h2></div></div>
+        <div className="life-grid">
+          <article className="life-card" data-reveal style={delay(0)}>
+            <Church size={24} />
+            <h3>Vie religieuse</h3>
+            <p>Chrétienne baptisée et confirmée à l’EEC, paroisse de Bafoussam Plateau.</p>
+          </article>
+          <article className="life-card" data-reveal style={delay(1)}>
+            <Users size={24} />
+            <h3>Vie associative</h3>
+            <p>Membre de l’association Love Kamer Sister Canada/USA (LKS).</p>
+          </article>
+          <article className="life-card" data-reveal style={delay(2)}>
+            <Heart size={24} />
+            <h3>Vie familiale</h3>
+            <p>Mariée, Stéphanie laisse derrière elle son époux et ses enfants.</p>
+          </article>
         </div>
       </section>
     </main>
@@ -379,7 +410,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
   useEffect(() => {
-    const titles: Record<View, string> = { memory: '', programme: 'Parcours', prix: 'Le Prix', tributes: 'Hommages', contact: 'Contact', family: 'Espace famille' };
+    const titles: Record<View, string> = { memory: '', programme: 'Parcours', obseques: 'Obsèques', prix: 'Le Prix', tributes: 'Hommages', contact: 'Contact', family: 'Espace famille' };
     document.title = `${titles[view] ? `${titles[view]} · ` : ''}En mémoire de ${profile.name}`;
   }, [view]);
   useReveal([view, updates.length, tributes.length]);
@@ -404,9 +435,10 @@ export default function App() {
   };
   const navigate = (target: NavTarget) => {
     setMenu(false);
-    if (target === 'gallery') {
+    if (target === 'gallery' || target === 'candles') {
       go('memory');
-      window.setTimeout(() => document.getElementById('galerie')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), view === 'memory' ? 0 : 80);
+      const anchor = target === 'gallery' ? 'galerie' : 'bougies';
+      window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), view === 'memory' ? 0 : 120);
       return;
     }
     go(target);
@@ -432,6 +464,7 @@ export default function App() {
       <div className="page" key={view}>
         {view === 'memory' && <Memory onNavigate={navigate} onOpen={setGalleryIndex} tributeCount={tributes.length} />}
         {view === 'programme' && <Programme />}
+        {view === 'obseques' && <Obseques onNavigate={navigate} />}
         {view === 'prix' && <Prix email={profile.email} />}
         {view === 'tributes' && <Tributes tributes={tributes} onAdd={addTribute} saving={saving} error={error} onOpenPrize={() => navigate('prix')} />}
         {view === 'contact' && <Contact onNavigate={navigate} />}
