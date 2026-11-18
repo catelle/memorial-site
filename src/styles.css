@@ -505,6 +505,7 @@ blockquote { margin: 26px 0; padding: 18px 24px; border-left: 3px solid var(--ac
 .video-memories { padding: 86px 0 98px; border-top: 1px solid var(--line); background: linear-gradient(90deg, rgba(var(--veil), 0.96), rgba(var(--veil-alt), 0.88)), url('/memories/flowersteph5.jpeg') center / cover; }
 .video-intro { max-width: 680px; margin: 14px 0 28px; color: var(--muted); font-size: 16px; }
 .video-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.video-grid:has(> :only-child) { grid-template-columns: minmax(0, 760px); justify-content: center; }
 .video-card { overflow: hidden; }
 .video-card video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #080508; }
 .video-card > div { padding: 22px 24px 25px; }

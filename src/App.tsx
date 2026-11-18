@@ -162,13 +162,12 @@ function Gallery({ onOpen }: { onOpen: (index: number) => void }) {
 function MemorialVideos() {
   const videos = [
     { src: '/videos/rassemblement-commemoratif-canada.mp4', title: 'Rassemblement commémoratif au Canada', text: 'Un moment de recueillement et de souvenir organisé au Canada en mémoire de Stéphanie.' },
-    { src: '/videos/retour-du-corps-canada.mp4', title: 'Retour du corps depuis le Canada', text: 'Images du retour du corps de Stéphanie depuis le Canada, pour son dernier voyage auprès de sa famille.' },
   ];
   return (
     <section className="video-memories">
       <div className="layout">
-        <div className="section-heading" data-reveal><div><label>Souvenirs en vidéo</label><h2>Des vidéos pour se souvenir.</h2></div></div>
-        <p className="video-intro" data-reveal>Ces vidéos témoignent des moments de recueillement vécus au Canada et du retour de Stéphanie auprès des siens.</p>
+        <div className="section-heading" data-reveal><div><label>Souvenirs en vidéo</label><h2>Une vidéo pour se souvenir.</h2></div></div>
+        <p className="video-intro" data-reveal>Cette vidéo témoigne du moment de recueillement vécu au Canada en mémoire de Stéphanie.</p>
         <div className="video-grid">
           {videos.map((video, i) => (
             <article className="video-card" key={video.src} data-reveal style={delay(i)}>
