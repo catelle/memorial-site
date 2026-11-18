@@ -1,1 +1,22 @@
-<!doctype html><html lang="fr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#fbf9f6"/><title>En mémoire de KOUANHOU Stéphanie Donald</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<!doctype html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fdf7f6" />
+    <meta name="description" content="Espace d’hommage et de souvenirs en mémoire de KOUANHOU Stéphanie Donald." />
+    <title>En mémoire de KOUANHOU Stéphanie Donald</title>
+    <script>
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark') localStorage.setItem('memorial-theme', q);
+        var t = q || localStorage.getItem('memorial-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

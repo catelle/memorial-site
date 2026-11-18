@@ -1,72 +1,462 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, Download, Heart, KeyRound, MapPin, Menu, MessageCircle, Share2, X } from 'lucide-react';
+import { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight, ArrowUp, CalendarDays, Check, ChevronRight, Download, Heart, Lock, MapPin, Menu, MessageCircle, Moon, Share2, Sun, X } from 'lucide-react';
+import { api, MemorialUpdate, Tribute } from './api';
+import { Lightbox } from './components/Lightbox';
+import { Prix } from './pages/Prix';
+import { Tributes } from './pages/Tributes';
+import { Family } from './pages/Family';
+import { useReveal, useTheme } from './hooks';
+import { HeroSlideshow } from './components/HeroSlideshow';
+import { Petals } from './components/Petals';
+import { CountUp } from './components/CountUp';
+import { CandleWall } from './components/CandleWall';
+import { StoryPhotos } from './components/StoryPhotos';
+import { Divider, Flower } from './components/Flower';
 
-type View = 'memory' | 'programme' | 'tributes' | 'family' | 'contact';
-type Tribute = { _id?: string; name: string; relation: string; message: string; city: string; date: string };
-type MemorialUpdate = { _id?: string; title: string; date: string; location: string; description: string; imageUrl: string };
-const assets = ['/memories/photo-03.jpg', ...Array.from({ length: 42 }, (_, i) => `/memories/photo-${String(i + 1).padStart(2, '0')}.jpg`)];
+type View = 'memory' | 'programme' | 'prix' | 'tributes' | 'family' | 'contact';
+type NavTarget = View | 'gallery';
+
+/* Each view has its own URL so pages can be shared and the family space lives at /famille. */
+const paths: Record<View, string> = { memory: '/', programme: '/parcours', prix: '/prix', tributes: '/hommages', contact: '/contact', family: '/famille' };
+const viewFromPath = (pathname: string): View => {
+  const clean = pathname.replace(/\/+$/, '') || '/';
+  return (Object.entries(paths).find(([, path]) => path === clean)?.[0] as View) || 'memory';
+};
+
+const photo = (n: number) => `/memories/photo-${String(n).padStart(2, '0')}.jpg`;
+const galleryImages = Array.from({ length: 42 }, (_, i) => photo(i + 1));
+const heroPortraits = [3, 8, 29, 42, 14, 22, 9, 11].map(photo);
 const profile = { name: 'KOUANHOU Stéphanie Donald', birth: 'Née le 12 décembre 1996', email: 'stephaniekouanhou@gmail.com' };
+const delay = (i: number) => ({ '--d': i } as CSSProperties);
 
-function Header({ view, onNavigate, onMenu }: { view: View; onNavigate: (view: View) => void; onMenu: () => void }) {
-  const links: [View, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['memory', 'Galerie'], ['tributes', 'Hommages']];
-  return <header className="site-header"><div className="header-inner"><button className="brand" onClick={() => onNavigate('memory')}><span className="monogram">∞</span><span><b>En mémoire de Stéphanie</b><small>Hommage et souvenirs</small></span></button><nav>{links.map(([target, label]) => <button className={view === target && label.toLowerCase().includes(view === 'programme' ? 'parcours' : 'hommage') ? 'active' : ''} key={label} onClick={() => onNavigate(target)}>{label}</button>)}<button onClick={() => onNavigate('family')}><KeyRound size={13} /> Espace famille</button></nav><div className="header-actions"><button className="ghost share" onClick={() => navigator.clipboard?.writeText(window.location.href)}><Share2 size={14} /> Partager</button><button className="gold contact-header" onClick={() => onNavigate('contact')}>Contacter la famille <ArrowRight size={14} /></button><button className="menu" onClick={onMenu}><Menu size={20} /></button></div></div></header>;
+/* ---------- Chrome: header, progress, back-to-top, toast ---------- */
+
+function ScrollProgress() {
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      bar.current?.style.setProperty('--progress', String(max > 0 ? window.scrollY / max : 0));
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(frame); };
+  }, []);
+  return <div className="scroll-progress" ref={bar} aria-hidden="true" />;
 }
 
-function GalleryLightbox({ images, initialIndex, onClose }: { images: string[]; initialIndex: number | null; onClose: () => void }) {
-  const [index, setIndex] = useState(initialIndex ?? 0);
-  useEffect(() => { if (initialIndex !== null) setIndex(initialIndex); }, [initialIndex]);
-  useEffect(() => { if (initialIndex === null) return; const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); if (event.key === 'ArrowRight') setIndex(current => (current + 1) % images.length); if (event.key === 'ArrowLeft') setIndex(current => (current - 1 + images.length) % images.length); }; document.addEventListener('keydown', onKeyDown); document.body.style.overflow = 'hidden'; return () => { document.removeEventListener('keydown', onKeyDown); document.body.style.overflow = ''; }; }, [images.length, initialIndex, onClose]);
-  if (initialIndex === null) return null;
-  return <div className="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Galerie de souvenirs" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}><button className="lightbox-close" onClick={onClose} aria-label="Fermer"><X size={22} /></button><button className="lightbox-arrow lightbox-prev" onClick={() => setIndex(current => (current - 1 + images.length) % images.length)} aria-label="Photo précédente"><ChevronLeft size={28} /></button><figure className="lightbox-figure"><img src={images[index]} alt={`Souvenir ${index + 1} de Stéphanie`} /><figcaption>Souvenir {index + 1} sur {images.length}</figcaption></figure><button className="lightbox-arrow lightbox-next" onClick={() => setIndex(current => (current + 1) % images.length)} aria-label="Photo suivante"><ChevronRight size={28} /></button><div className="lightbox-thumbnails">{images.map((image, thumbnailIndex) => <button className={thumbnailIndex === index ? 'selected' : ''} key={image} onClick={() => setIndex(thumbnailIndex)} aria-label={`Voir le souvenir ${thumbnailIndex + 1}`}><img src={image} alt="" /></button>)}</div></div>;
+function useScrolled(threshold: number) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
 }
+
+function BackToTop() {
+  const visible = useScrolled(700);
+  return (
+    <button className={`back-to-top${visible ? ' visible' : ''}`} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Revenir en haut de la page">
+      <ArrowUp size={18} />
+    </button>
+  );
+}
+
+function ThemeToggle({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
+  const dark = theme === 'dark';
+  return (
+    <button className="theme-toggle" onClick={onToggle} aria-label={dark ? 'Passer au thème clair' : 'Passer au thème sombre'} title={dark ? 'Thème clair' : 'Thème sombre'}>
+      <span className="theme-toggle-track"><span className="theme-toggle-thumb">{dark ? <Moon size={13} /> : <Sun size={13} />}</span></span>
+    </button>
+  );
+}
+
+const navLinks: [NavTarget, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['gallery', 'Galerie'], ['prix', 'Le Prix'], ['tributes', 'Hommages']];
+
+function Header({ view, onNavigate, onMenu, onShare, theme, onToggleTheme }: { view: View; onNavigate: (target: NavTarget) => void; onMenu: () => void; onShare: () => void; theme: 'light' | 'dark'; onToggleTheme: () => void }) {
+  const scrolled = useScrolled(24);
+  return (
+    <header className={`site-header${scrolled ? ' scrolled' : ''}`}>
+      <div className="header-inner">
+        <button className="brand" onClick={() => onNavigate('memory')}>
+          <span className="monogram"><Flower /></span>
+          <span><b>En mémoire de Stéphanie</b><small>Hommage et souvenirs</small></span>
+        </button>
+        <nav>
+          {navLinks.map(([target, label]) => (
+            <button key={label} className={view === target ? 'active' : ''} onClick={() => onNavigate(target)}>{label}</button>
+          ))}
+        </nav>
+        <div className="header-actions">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <button className="ghost share" onClick={onShare}><Share2 size={14} /> Partager</button>
+          <button className="gold contact-header" onClick={() => onNavigate('contact')}>Contacter la famille <ArrowRight size={14} /></button>
+          <button className="menu" onClick={onMenu} aria-label="Ouvrir le menu"><Menu size={20} /></button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MobileMenu({ onClose, onNavigate }: { onClose: () => void; onNavigate: (target: NavTarget) => void }) {
+  const items: [NavTarget, string][] = [['memory', 'Sa vie'], ['programme', 'Parcours'], ['gallery', 'Galerie'], ['prix', 'Le Prix'], ['tributes', 'Hommages'], ['contact', 'Contact famille']];
+  return (
+    <div className="mobile-menu" role="dialog" aria-modal="true">
+      <button className="mobile-close" onClick={onClose} aria-label="Fermer le menu"><X /></button>
+      {items.map(([target, label], i) => <button key={label} style={delay(i)} onClick={() => onNavigate(target)}>{label}</button>)}
+      <Flower className="mobile-flower" />
+    </div>
+  );
+}
+
+/* ---------- Gallery ---------- */
+
+function PhotoRibbon({ onOpen }: { onOpen: (index: number) => void }) {
+  const items = galleryImages.slice(12, 34);
+  return (
+    <section className="photo-ribbon" aria-label="Ruban de souvenirs">
+      <div className="ribbon-track">
+        {[...items, ...items].map((src, i) => (
+          <button key={`${src}-${i}`} onClick={() => onOpen(galleryImages.indexOf(src))} tabIndex={i < items.length ? 0 : -1} aria-hidden={i >= items.length} aria-label="Agrandir ce souvenir">
+            <img src={src} alt="" loading="lazy" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Gallery({ onOpen }: { onOpen: (index: number) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? galleryImages : galleryImages.slice(0, 12);
+  useReveal([expanded]);
+  return (
+    <section className="gallery layout" id="galerie">
+      <div className="section-heading" data-reveal>
+        <div><label>Galerie de souvenirs</label><h2>Des moments à garder près du cœur.</h2></div>
+        <button className="text-link" onClick={() => setExpanded(value => !value)}>
+          {expanded ? 'Afficher moins' : `Voir tous les souvenirs (${galleryImages.length})`} <ArrowRight size={15} className={expanded ? 'rotate-up' : ''} />
+        </button>
+      </div>
+      <div className="gallery-grid">
+        {shown.map((src, i) => (
+          <button key={src} className={`gallery-item${i % 12 === 0 ? ' featured-image' : i % 12 === 9 ? ' tall-image' : ''}`} data-reveal style={delay(i % 6)} onClick={() => onOpen(i)} aria-label={`Agrandir le souvenir ${i + 1}`}>
+            <img src={src} alt={`Souvenir ${i + 1} de Stéphanie`} loading="lazy" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Home sections ---------- */
 
 function MemorialVideos() {
   const videos = [
     { src: '/videos/rassemblement-commemoratif-canada.mp4', title: 'Rassemblement commémoratif au Canada', text: 'Un moment de recueillement et de souvenir organisé au Canada en mémoire de Stéphanie.' },
     { src: '/videos/retour-du-corps-canada.mp4', title: 'Retour du corps depuis le Canada', text: 'Images du retour du corps de Stéphanie depuis le Canada, pour son dernier voyage auprès de sa famille.' },
   ];
-  return <section className="video-memories"><div className="layout"><div className="section-heading"><div><label>Souvenirs audiovisuels</label><h2>Des images pour se souvenir.</h2></div></div><p className="video-intro">Ces vidéos témoignent des moments de recueillement vécus au Canada et du retour de Stéphanie auprès des siens.</p><div className="video-grid">{videos.map(video => <article className="video-card" key={video.src}><video controls preload="metadata" playsInline><source src={video.src} type="video/mp4" />Votre navigateur ne prend pas en charge la lecture vidéo.</video><div><h3>{video.title}</h3><p>{video.text}</p></div></article>)}</div></div></section>;
+  return (
+    <section className="video-memories">
+      <div className="layout">
+        <div className="section-heading" data-reveal><div><label>Souvenirs en vidéo</label><h2>Des vidéos pour se souvenir.</h2></div></div>
+        <p className="video-intro" data-reveal>Ces vidéos témoignent des moments de recueillement vécus au Canada et du retour de Stéphanie auprès des siens.</p>
+        <div className="video-grid">
+          {videos.map((video, i) => (
+            <article className="video-card" key={video.src} data-reveal style={delay(i)}>
+              <video controls preload="metadata" playsInline><source src={video.src} type="video/mp4" />Votre navigateur ne prend pas en charge la lecture vidéo.</video>
+              <div><h3>{video.title}</h3><p>{video.text}</p></div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function MemorialUpdates({ updates }: { updates: MemorialUpdate[] }) {
   if (!updates.length) return null;
-  return <section className="memorial-updates"><div className="layout"><label>Informations de la famille</label><h2>Actualités et prochains rendez-vous.</h2><div className="updates-grid">{updates.map(update => <article className="update-card" key={update._id || update.title}>{update.imageUrl && <img src={update.imageUrl} alt="Illustration de l’information familiale" />}<div className="update-content"><span>{update.date || 'Information familiale'}</span><h3>{update.title}</h3>{update.location && <p className="update-location"><MapPin size={14} /> {update.location}</p>}<p>{update.description}</p></div></article>)}</div></div></section>;
+  return (
+    <section className="memorial-updates">
+      <div className="layout">
+        <label data-reveal>Informations de la famille</label>
+        <h2 data-reveal>Actualités et prochains rendez-vous.</h2>
+        <div className="updates-grid">
+          {updates.map((update, i) => (
+            <article className="update-card" key={update._id || update.title} data-reveal style={delay(i % 4)}>
+              {update.imageUrl && <img src={update.imageUrl} alt="Illustration de l’information familiale" />}
+              <div className="update-content">
+                <span>{update.date || 'Information familiale'}</span>
+                <h3>{update.title}</h3>
+                {update.location && <p className="update-location"><MapPin size={14} /> {update.location}</p>}
+                <p>{update.description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
-function Contact({ onNavigate }: { onNavigate: (view: View) => void }) {
-  return <main><section className="page-hero layout contact-hero"><label>Contact famille</label><h1>Rester proches,<br /><em>partager les informations.</em></h1><p>Pour toute question concernant le Prix d’Excellence, les activités commémoratives ou les informations familiales, vous pouvez contacter les proches de Stéphanie.</p></section><section className="contact-grid layout"><article className="contact-card"><Heart size={22} /><h2>Écrire à la famille</h2><p>Pour transmettre un message, une information ou une demande concernant l’hommage.</p><a className="gold" href={`mailto:${profile.email}`}>Envoyer un email <ArrowRight size={15} /></a></article><article className="contact-card"><MessageCircle size={22} /><h2>Partager un hommage</h2><p>Vous pouvez également publier directement un souvenir sur le mur des hommages.</p><button className="paper" onClick={() => onNavigate('tributes')}>Accéder au mur des hommages <ArrowRight size={15} /></button></article><article className="contact-card"><label>Coordonnées</label><h3>{profile.name}</h3><p><b>Email :</b><br /><a href={`mailto:${profile.email}`}>{profile.email}</a><br /><br /><b>Téléphone famille :</b><br />À renseigner par la famille</p></article></section></main>;
+function TributePreview({ tributes, onNavigate }: { tributes: Tribute[]; onNavigate: (target: NavTarget) => void }) {
+  const [index, setIndex] = useState(0);
+  const recent = tributes.slice(0, 8);
+  useEffect(() => {
+    if (recent.length < 2) return;
+    const timer = window.setInterval(() => setIndex(current => (current + 1) % recent.length), 7000);
+    return () => window.clearInterval(timer);
+  }, [recent.length]);
+  if (!recent.length) return null;
+  const tribute = recent[index % recent.length];
+  return (
+    <section className="tribute-preview">
+      <div className="layout" data-reveal>
+        <Divider />
+        <label>Ils se souviennent</label>
+        <blockquote key={tribute._id || index} className="tribute-quote">
+          <p>« {tribute.message} »</p>
+          <footer><strong>{tribute.name}</strong>{tribute.relation && <span> · {tribute.relation}</span>}</footer>
+        </blockquote>
+        <div className="tribute-preview-dots">
+          {recent.map((t, i) => <button key={t._id || i} className={i === index % recent.length ? 'active' : ''} onClick={() => setIndex(i)} aria-label={`Hommage ${i + 1}`} />)}
+        </div>
+        <button className="text-link" onClick={() => onNavigate('tributes')}>Lire tous les hommages <ArrowRight size={15} /></button>
+      </div>
+    </section>
+  );
 }
 
-function Memory({ onNavigate }: { onNavigate: (view: View) => void }) {
-  return <main><section className="hero"><div className="hero-glow" /><div className="eyebrow"><span />En hommage à Stéphanie<span /></div><div className="portrait-frame"><img src={assets[0]} alt={`Portrait de ${profile.name}`} /><span className="seal">∞<small>Souvenir éternel</small></span></div><h1>{profile.name}</h1><p className="dates">{profile.birth}</p><p className="epitaph">« Une vie guidée par le savoir, la passion et la générosité. »</p><div className="welcome">Cet espace est dédié à la mémoire de Stéphanie, à son parcours remarquable et aux souvenirs partagés avec sa famille, ses amis et toutes les personnes qui l’ont aimée.</div><div className="hero-actions"><button className="gold large" onClick={() => onNavigate('programme')}><CalendarDays size={17} /> Découvrir son parcours</button><button className="paper large" onClick={() => onNavigate('tributes')}><MessageCircle size={17} /> Laisser un hommage</button></div></section><section className="stats"><div><strong>1996</strong><span>Année de naissance</span></div><div><strong>2023</strong><span>Diplôme d’ingénieure</span></div><div><strong>6</strong><span>Années d’expériences</span></div><div><strong>Hommages</strong><span>Enregistrés en base</span></div></section><section className="story layout"><div><label>Le cœur de son histoire</label><h2>Une femme brillante, passionnée et tournée vers l’avenir.</h2><p>Stéphanie a construit son parcours avec détermination, de ses années au Lycée bilingue de Baleng à sa formation en chimie à l’Université de Dschang, puis à l’École Nationale Supérieure Polytechnique de Douala.</p><p>Ingénieure diplômée en 2023, elle a également enrichi son expérience par plusieurs stages et découvertes professionnelles dans les domaines de l’emploi, de la cosmétique et de la chimie.</p><blockquote>« La connaissance grandit lorsqu’elle est partagée. »</blockquote><button className="text-link" onClick={() => onNavigate('programme')}>Lire son parcours complet <ArrowRight size={15} /></button></div><div className="pillars"><div className="section-heading"><h3>Ce qui la caractérise</h3><Heart size={18} /></div>{[['Passionnée de sciences', 'Un parcours académique construit autour de la chimie et de l’excellence.'], ['Ingénieure diplômée', 'Diplômée de l’École Nationale Supérieure Polytechnique de Douala en 2023.'], ['Curieuse et ouverte', 'Une passion pour la lecture, les voyages et la découverte du monde.'], ['Une présence précieuse', 'Une femme dont la mémoire reste vivante dans le cœur de ses proches.']].map(([title, text], i) => <div className="pillar" key={title}><span>0{i + 1}</span><div><h4>{title}</h4><p>{text}</p></div></div>)}</div></section><section className="gallery layout"><div className="section-heading"><div><label>Galerie de souvenirs</label><h2>Des moments à garder près du cœur.</h2></div><button className="text-link" onClick={() => onNavigate('memory')}>Voir tous les souvenirs <ArrowRight size={15} /></button></div><div className="gallery-grid">{assets.slice(1, 13).map((src, i) => <img key={src} className={i === 0 ? 'featured-image' : ''} src={src} alt={`Souvenir ${i + 1} de Stéphanie`} />)}</div></section></main>;
+function Memory({ onNavigate, onOpen, tributeCount }: { onNavigate: (target: NavTarget) => void; onOpen: (index: number) => void; tributeCount: number }) {
+  const pillars = [
+    ['Passionnée de sciences', 'Un parcours académique construit autour de la chimie et de l’excellence.'],
+    ['Ingénieure diplômée', 'Diplômée de l’École Nationale Supérieure Polytechnique de Douala en 2023.'],
+    ['Curieuse et ouverte', 'Une passion pour la lecture, les voyages et la découverte du monde.'],
+    ['Une présence précieuse', 'Une femme dont la mémoire reste vivante dans le cœur de ses proches.'],
+  ];
+  return (
+    <main>
+      <section className="hero">
+        <div className="hero-bg" aria-hidden="true" />
+        <div className="eyebrow hero-in" style={delay(0)}><Flower />En hommage à Stéphanie</div>
+        <HeroSlideshow images={heroPortraits} name={profile.name} />
+        <h1 className="hero-in" style={delay(1)}>{profile.name}</h1>
+        <p className="dates hero-in" style={delay(2)}>{profile.birth}</p>
+        <p className="epitaph hero-in" style={delay(3)}>« Une vie guidée par le savoir, la passion et la générosité. »</p>
+        <div className="welcome hero-in" style={delay(4)}>Cet espace est dédié à la mémoire de Stéphanie, à son parcours remarquable et aux souvenirs partagés avec sa famille, ses amis et toutes les personnes qui l’ont aimée.</div>
+        <div className="hero-actions hero-in" style={delay(5)}>
+          <button className="gold large" onClick={() => onNavigate('programme')}><CalendarDays size={17} /> Découvrir son parcours</button>
+          <button className="paper large" onClick={() => onNavigate('tributes')}><MessageCircle size={17} /> Laisser un hommage</button>
+        </div>
+      </section>
+
+      <section className="stats">
+        <div data-reveal style={delay(0)}><strong><CountUp value={1996} from={1950} /></strong><span>Année de naissance</span></div>
+        <div data-reveal style={delay(1)}><strong><CountUp value={2023} from={1980} /></strong><span>Diplôme d’ingénieure</span></div>
+        <div data-reveal style={delay(2)}><strong><CountUp value={6} /></strong><span>Années d’expériences</span></div>
+        <div data-reveal style={delay(3)}><strong><CountUp value={tributeCount} /></strong><span>{tributeCount > 1 ? 'Hommages partagés' : 'Hommage partagé'}</span></div>
+      </section>
+
+      <PhotoRibbon onOpen={onOpen} />
+
+      <section className="story layout">
+        <div data-reveal>
+          <label>Le cœur de son histoire</label>
+          <h2>Une femme brillante, passionnée et tournée vers l’avenir.</h2>
+          <p>Stéphanie a construit son parcours avec détermination, de ses années au Lycée bilingue de Baleng à sa formation en chimie à l’Université de Dschang, puis à l’École Nationale Supérieure Polytechnique de Douala.</p>
+          <p>Ingénieure diplômée en 2023, elle a également enrichi son expérience par plusieurs stages et découvertes professionnelles dans les domaines de l’emploi, de la cosmétique et de la chimie.</p>
+          <blockquote>« La connaissance grandit lorsqu’elle est partagée. »</blockquote>
+          <button className="text-link" onClick={() => onNavigate('programme')}>Lire son parcours complet <ArrowRight size={15} /></button>
+        </div>
+        <div className="pillars" data-reveal style={delay(1)}>
+          <div className="section-heading"><h3>Ce qui la caractérise</h3><Heart size={18} className="beat" /></div>
+          {pillars.map(([title, text], i) => (
+            <div className="pillar" key={title} data-reveal style={delay(i + 1)}><span>0{i + 1}</span><div><h4>{title}</h4><p>{text}</p></div></div>
+          ))}
+        </div>
+      </section>
+
+      <StoryPhotos />
+      <Gallery onOpen={onOpen} />
+    </main>
+  );
 }
+
+/* ---------- Other pages ---------- */
 
 function Programme() {
   const education = [['2014', 'Lycée bilingue de Baleng', 'Baccalauréat C'], ['2017', 'Université de Dschang', 'Licence en chimie inorganique'], ['2018', 'Université de Dschang', 'Master I en chimie inorganique'], ['2023', 'École Nationale Supérieure Polytechnique de Douala', 'Ingénieure diplômée']];
   const experience = [['Juillet 2016', 'Fond National de l’Emploi', 'Stage'], ['2016', 'Complexe Cosmétique de l’Ouest', 'Visite d’entreprise'], ['2021 – 2022', 'Fermencam', 'Stage'], ['2023 – 2024', 'CMIC de Yassa', 'Stage professionnel']];
-  return <main><section className="programme-hero"><div className="layout"><label>Parcours de Stéphanie</label><h1>Une histoire<br /><em>de savoir et de passion.</em></h1><p>Retrouvez les étapes académiques et professionnelles qui ont marqué le parcours de {profile.name}.</p><div className="programme-meta"><span><CalendarDays size={17} /><b>{profile.birth}</b></span><span><MapPin size={17} /><b>Douala, Cameroun</b></span></div></div></section><section className="timeline layout"><div className="section-heading"><div><label>Cursus académique</label><h2>Grandir par l’apprentissage.</h2></div><button className="gold" onClick={() => window.print()}><Download size={14} /> Imprimer le parcours</button></div>{education.map(([time, title, text]) => <div className="timeline-row" key={time + title}><time>{time}</time><div><h3>{title}</h3><p>{text}</p></div><ChevronRight size={18} /></div>)}</section><section className="venue layout"><div><label>Expérience professionnelle</label><h2>Des expériences au service de la découverte.</h2><p>Stéphanie a multiplié les expériences de terrain, développant sa curiosité et sa connaissance du monde professionnel.</p>{experience.map(([time, title, text]) => <div className="timeline-row" key={time + title}><time>{time}</time><div><h3>{title}</h3><p>{text}</p></div></div>)}</div><div className="venue-card"><MapPin size={21} /><h3>Langues et centres d’intérêt</h3><p><b>Français :</b> parlé, lu et écrit — excellent<br /><b>Anglais :</b> lu et écrit — moyen</p><p><b>Passionnée de :</b><br />Lecture<br />Voyages</p><button className="text-link" onClick={() => window.location.href = `mailto:${profile.email}`}>Écrire à la famille <ArrowRight size={15} /></button></div></section></main>;
+  return (
+    <main>
+      <section className="programme-hero">
+        <div className="layout">
+          <label className="hero-in" style={delay(0)}>Parcours de Stéphanie</label>
+          <h1 className="hero-in" style={delay(1)}>Une histoire<br /><em>de savoir et de passion.</em></h1>
+          <p className="hero-in" style={delay(2)}>Retrouvez les étapes académiques et professionnelles qui ont marqué le parcours de {profile.name}.</p>
+          <div className="programme-meta hero-in" style={delay(3)}><span><CalendarDays size={17} /><b>{profile.birth}</b></span><span><MapPin size={17} /><b>Douala, Cameroun</b></span></div>
+        </div>
+      </section>
+      <section className="timeline layout">
+        <div className="section-heading" data-reveal>
+          <div><label>Cursus académique</label><h2>Grandir par l’apprentissage.</h2></div>
+          <button className="gold" onClick={() => window.print()}><Download size={14} /> Imprimer le parcours</button>
+        </div>
+        <div className="timeline-list">
+          {education.map(([time, title, text], i) => (
+            <div className="timeline-row" key={time + title} data-reveal style={delay(i)}><time>{time}</time><div><h3>{title}</h3><p>{text}</p></div><ChevronRight size={18} /></div>
+          ))}
+        </div>
+      </section>
+      <section className="venue">
+        <div>
+          <label data-reveal>Expérience professionnelle</label>
+          <h2 data-reveal>Des expériences au service de la découverte.</h2>
+          <p data-reveal>Stéphanie a multiplié les expériences de terrain, développant sa curiosité et sa connaissance du monde professionnel.</p>
+          <div className="timeline-list">
+            {experience.map(([time, title, text], i) => (
+              <div className="timeline-row" key={time + title} data-reveal style={delay(i)}><time>{time}</time><div><h3>{title}</h3><p>{text}</p></div></div>
+            ))}
+          </div>
+        </div>
+        <div className="venue-card" data-reveal style={delay(1)}>
+          <MapPin size={21} />
+          <h3>Langues et centres d’intérêt</h3>
+          <p><b>Français :</b> parlé, lu et écrit — excellent<br /><b>Anglais :</b> lu et écrit — moyen</p>
+          <p><b>Passionnée de :</b><br />Lecture<br />Voyages</p>
+          <button className="text-link" onClick={() => { window.location.href = `mailto:${profile.email}`; }}>Écrire à la famille <ArrowRight size={15} /></button>
+        </div>
+      </section>
+    </main>
+  );
 }
 
-function Tributes({ tributes, onAdd, saving, error }: { tributes: Tribute[]; onAdd: (tribute: Tribute) => Promise<void>; saving: boolean; error: string }) {
-  const [open, setOpen] = useState(false); const [form, setForm] = useState({ name: '', relation: '', message: '', city: '' });
-  const submit = async (e: FormEvent) => { e.preventDefault(); await onAdd({ ...form, date: new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date()) }); setForm({ name: '', relation: '', message: '', city: '' }); setOpen(false); };
-  return <main><section className="page-hero layout"><label>Mur des hommages</label><h1>Des mots d’amour,<br /><em>pour ne jamais oublier.</em></h1><p>Partagez un souvenir, un message ou quelques mots pour Stéphanie et toutes les personnes qui l’aiment.</p><button className="gold large" onClick={() => setOpen(true)}><Heart size={17} /> Laisser un hommage</button>{error && <p className="form-error">{error}</p>}</section><section className="award-panel layout"><div><label>Prix d’Excellence et de Leadership</label><h2>Le Prix KOUANHOU Stéphanie Donald</h2><p>Le Lycée bilingue de Baleng a créé ce prix en mémoire de Stéphanie afin de récompenser chaque année les élèves qui se distinguent par leur réussite académique, leur conduite et leur sens du service collectif.</p><p className="award-meta">Document officiel · Décision et communiqué d’information</p></div><a className="gold" href="/documents/prix-excellence-leadership-kouanhou-stephanie.pdf" download="Prix-Excellence-Leadership-Kouanhou-Stephanie-Donald.pdf"><Download size={16} /> Télécharger le document</a></section><section className="tribute-grid layout">{tributes.map((tribute, i) => <article className="tribute-card" key={tribute._id || `${tribute.name}-${i}`}><span className="quote">«</span><p>{tribute.message}</p><footer><strong>{tribute.name}</strong><span>{tribute.relation || 'Proche'} · {tribute.city || 'Cameroun'}</span><small>{tribute.date}</small></footer></article>)}</section>{open && <div className="modal-backdrop"><form className="modal" onSubmit={submit}><button type="button" className="close" onClick={() => setOpen(false)}><X size={18} /></button><label>Laisser un hommage</label><h2>Quelques mots peuvent tout changer.</h2><input required placeholder="Votre nom" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /><input placeholder="Votre lien avec Stéphanie" value={form.relation} onChange={e => setForm({ ...form, relation: e.target.value })} /><input placeholder="Ville / pays" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /><textarea required rows={5} placeholder="Votre souvenir ou votre message" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} /><button className="gold" type="submit" disabled={saving}>{saving ? 'Enregistrement…' : 'Publier l’hommage'} <Heart size={15} /></button></form></div>}</main>;
+function Contact({ onNavigate }: { onNavigate: (target: NavTarget) => void }) {
+  return (
+    <main>
+      <section className="page-hero layout contact-hero">
+        <label className="hero-in" style={delay(0)}>Contact famille</label>
+        <h1 className="hero-in" style={delay(1)}>Rester proches,<br /><em>partager les informations.</em></h1>
+        <p className="hero-in" style={delay(2)}>Pour toute question concernant le Prix d’Excellence, les activités commémoratives ou les informations familiales, vous pouvez contacter les proches de Stéphanie.</p>
+      </section>
+      <section className="contact-grid layout">
+        <article className="contact-card" data-reveal style={delay(0)}><Heart size={22} /><h2>Écrire à la famille</h2><p>Pour transmettre un message, une information ou une demande concernant l’hommage.</p><a className="gold" href={`mailto:${profile.email}`}>Envoyer un email <ArrowRight size={15} /></a></article>
+        <article className="contact-card" data-reveal style={delay(1)}><MessageCircle size={22} /><h2>Partager un hommage</h2><p>Vous pouvez également publier directement un souvenir sur le mur des hommages.</p><button className="paper" onClick={() => onNavigate('tributes')}>Accéder au mur des hommages <ArrowRight size={15} /></button></article>
+        <article className="contact-card" data-reveal style={delay(2)}><label>Coordonnées</label><h3>{profile.name}</h3><p><b>Email :</b><br /><a href={`mailto:${profile.email}`}>{profile.email}</a><br /><br /><b>Téléphone famille :</b><br />À renseigner par la famille</p></article>
+      </section>
+    </main>
+  );
 }
 
-function Family({ updates, onPublish }: { updates: MemorialUpdate[]; onPublish: (update: MemorialUpdate) => Promise<void> }) {
-  const [saved, setSaved] = useState(false); const [publishing, setPublishing] = useState(false); const [form, setForm] = useState({ title: '', date: '', location: '', description: '', imageUrl: '' });
-  const submit = async (event: FormEvent) => { event.preventDefault(); setPublishing(true); try { await onPublish(form); setForm({ title: '', date: '', location: '', description: '', imageUrl: '' }); } finally { setPublishing(false); } };
-  return <main><section className="page-hero family-hero layout"><label><KeyRound size={14} /> Espace famille</label><h1>Préserver les détails.<br /><em>Garder la mémoire vivante.</em></h1><p>Un espace privé pour la famille afin de suivre le parcours, la galerie et les informations dédiées à Stéphanie.</p></section><section className="admin-grid layout"><div className="admin-card"><div className="section-heading"><div><label>Contenu en ligne</label><h2>Vue d’ensemble</h2></div><span className="status"><span />Publié</span></div><div className="admin-stat"><strong>6</strong><span>expériences présentées</span></div><div className="admin-stat"><strong>{updates.length}</strong><span>actualités publiées</span></div><button className="gold" onClick={() => setSaved(true)}>{saved ? <><Check size={15} /> Enregistré</> : <>Enregistrer les changements <ArrowRight size={15} /></>}</button></div><div className="admin-card"><label>Informations</label><h2>{profile.name}</h2><p>{profile.birth}<br />{profile.email}</p><button className="paper" onClick={() => window.location.href = `mailto:${profile.email}`}>Contacter la famille</button></div><div className="admin-card full"><label>Publier une actualité</label><h2>Programme, lieu ou plan d’activité</h2><p>Ajoutez une information qui sera visible publiquement sur le site.</p><form className="update-form" onSubmit={submit}><input required placeholder="Titre de l’actualité" value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} /><div className="update-form-row"><input type="date" placeholder="Date" value={form.date} onChange={event => setForm({ ...form, date: event.target.value })} /><input placeholder="Lieu ou adresse" value={form.location} onChange={event => setForm({ ...form, location: event.target.value })} /></div><textarea required rows={4} placeholder="Description, programme ou consignes" value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} /><input placeholder="URL de l’image du programme ou du plan (facultatif)" value={form.imageUrl} onChange={event => setForm({ ...form, imageUrl: event.target.value })} /><button className="gold" type="submit" disabled={publishing}>{publishing ? 'Publication…' : 'Publier l’actualité'} <ArrowRight size={15} /></button></form></div></section></main>;
-}
+/* ---------- App ---------- */
 
 export default function App() {
-  const [view, setView] = useState<View>('memory'); const [menu, setMenu] = useState(false); const [tributes, setTributes] = useState<Tribute[]>([]); const [updates, setUpdates] = useState<MemorialUpdate[]>([]); const [saving, setSaving] = useState(false); const [error, setError] = useState(''); const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
-  const galleryImages = assets.slice(1);
-  useEffect(() => { fetch('/api/memorial/tributes').then(r => r.ok ? r.json() : Promise.reject(new Error('API indisponible'))).then(rows => setTributes(rows)).catch(() => setError('Les hommages enregistrés ne sont pas disponibles pour le moment.')); }, []);
-  useEffect(() => { fetch('/api/memorial/updates').then(r => r.ok ? r.json() : Promise.reject(new Error('API indisponible'))).then(rows => setUpdates(rows)).catch(() => undefined); }, []);
-  useEffect(() => { const handleGalleryClick = (event: MouseEvent) => { const target = event.target; if (!(target instanceof HTMLImageElement) || !target.closest('.gallery-grid')) return; const source = target.getAttribute('src') || ''; const index = galleryImages.findIndex(image => source.endsWith(image)); setGalleryIndex(index >= 0 ? index : 0); }; document.addEventListener('click', handleGalleryClick); return () => document.removeEventListener('click', handleGalleryClick); }, [galleryImages]);
-  const addTribute = async (tribute: Tribute) => { setSaving(true); setError(''); try { const response = await fetch('/api/memorial/tributes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tribute) }); if (!response.ok) throw new Error('Échec'); const saved = await response.json(); setTributes(current => [saved, ...current]); } catch { setError('Impossible d’enregistrer cet hommage. Veuillez réessayer.'); throw new Error('Impossible d’enregistrer'); } finally { setSaving(false); } };
-  const publishUpdate = async (update: MemorialUpdate) => { const response = await fetch('/api/memorial/updates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(update) }); if (!response.ok) throw new Error('Impossible de publier cette actualité.'); const saved = await response.json(); setUpdates(current => [saved, ...current]); };
-  const navigate = (next: View) => { setView(next); setMenu(false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  return <><Header view={view} onNavigate={navigate} onMenu={() => setMenu(true)} />{menu && <div className="mobile-menu"><button onClick={() => setMenu(false)}><X /></button>{[['memory', 'Sa vie'], ['programme', 'Parcours'], ['tributes', 'Hommages'], ['family', 'Espace famille'], ['contact', 'Contact famille']].map(([v, label]) => <button key={v} onClick={() => navigate(v as View)}>{label}</button>)}</div>}{view === 'memory' ? <Memory onNavigate={navigate} /> : view === 'programme' ? <Programme /> : view === 'tributes' ? <Tributes tributes={tributes} onAdd={addTribute} saving={saving} error={error} /> : view === 'contact' ? <Contact onNavigate={navigate} /> : <Family updates={updates} onPublish={publishUpdate} />}{view === 'memory' && <><MemorialUpdates updates={updates} /><MemorialVideos /></>}<footer className="site-footer"><span>En mémoire de {profile.name}</span><span>Un hommage préservé avec soin par la famille</span></footer><GalleryLightbox images={galleryImages} initialIndex={galleryIndex} onClose={() => setGalleryIndex(null)} /></>;
+  const [theme, toggleTheme] = useTheme();
+  const [view, setView] = useState<View>(() => viewFromPath(window.location.pathname));
+  const [menu, setMenu] = useState(false);
+  const [tributes, setTributes] = useState<Tribute[]>([]);
+  const [updates, setUpdates] = useState<MemorialUpdate[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  const [toast, setToast] = useState('');
+
+  const loadPublicData = useCallback(() => {
+    api<Tribute[]>('/api/memorial/tributes').then(rows => { setTributes(rows); setError(''); }).catch(() => setError('Les hommages enregistrés ne sont pas disponibles pour le moment.'));
+    api<MemorialUpdate[]>('/api/memorial/updates').then(setUpdates).catch(() => undefined);
+  }, []);
+  useEffect(() => { loadPublicData(); }, [loadPublicData]);
+  useEffect(() => {
+    const onPop = () => setView(viewFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  useEffect(() => {
+    const titles: Record<View, string> = { memory: '', programme: 'Parcours', prix: 'Le Prix', tributes: 'Hommages', contact: 'Contact', family: 'Espace famille' };
+    document.title = `${titles[view] ? `${titles[view]} · ` : ''}En mémoire de ${profile.name}`;
+  }, [view]);
+  useReveal([view, updates.length, tributes.length]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(''), 2800);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const addTribute = async (tribute: Tribute) => {
+    setSaving(true);
+    try {
+      const saved = await api<Tribute>('/api/memorial/tributes', { method: 'POST', body: tribute });
+      setTributes(current => [saved, ...current]);
+      setError('');
+    } finally { setSaving(false); }
+  };
+
+  const go = (next: View) => {
+    if (window.location.pathname !== paths[next]) window.history.pushState(null, '', paths[next]);
+    setView(next);
+  };
+  const navigate = (target: NavTarget) => {
+    setMenu(false);
+    if (target === 'gallery') {
+      go('memory');
+      window.setTimeout(() => document.getElementById('galerie')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), view === 'memory' ? 0 : 80);
+      return;
+    }
+    go(target);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const share = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: document.title, url }); return; } catch { /* cancelled */ }
+    }
+    try { await navigator.clipboard.writeText(url); setToast('Lien copié dans le presse-papiers'); } catch { setToast(url); }
+  };
+
+  const closeLightbox = useCallback(() => setGalleryIndex(null), []);
+
+  return (
+    <>
+      <ScrollProgress />
+      {view !== 'family' && <Petals />}
+      <Header view={view} onNavigate={navigate} onMenu={() => setMenu(true)} onShare={share} theme={theme} onToggleTheme={toggleTheme} />
+      {menu && <MobileMenu onClose={() => setMenu(false)} onNavigate={navigate} />}
+      <div className="page" key={view}>
+        {view === 'memory' && <Memory onNavigate={navigate} onOpen={setGalleryIndex} tributeCount={tributes.length} />}
+        {view === 'programme' && <Programme />}
+        {view === 'prix' && <Prix email={profile.email} />}
+        {view === 'tributes' && <Tributes tributes={tributes} onAdd={addTribute} saving={saving} error={error} onOpenPrize={() => navigate('prix')} />}
+        {view === 'contact' && <Contact onNavigate={navigate} />}
+        {view === 'family' && <Family onDataChanged={loadPublicData} onLeave={() => navigate('memory')} />}
+        {view === 'memory' && (
+          <>
+            <CandleWall name={profile.name} />
+            <TributePreview tributes={tributes} onNavigate={navigate} />
+            <MemorialUpdates updates={updates} />
+            <MemorialVideos />
+          </>
+        )}
+      </div>
+      <footer className="site-footer">
+        <div className="footer-flower"><Flower /></div>
+        <p className="footer-quote">« Ceux que l’on aime ne meurent jamais tout à fait. »</p>
+        <div className="footer-row">
+          <span>En mémoire de {profile.name}</span>
+          <span>Un hommage préservé avec soin par la famille</span>
+          <a className="footer-family" href={paths.family} onClick={event => { event.preventDefault(); navigate('family'); }} aria-label="Accès famille" title="Accès famille"><Lock size={12} /></a>
+        </div>
+      </footer>
+      <BackToTop />
+      {toast && <div className="toast" role="status"><Check size={15} /> {toast}</div>}
+      <Lightbox images={galleryImages} initialIndex={galleryIndex} onClose={closeLightbox} />
+    </>
+  );
 }
