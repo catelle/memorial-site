@@ -2,7 +2,8 @@ export type Tribute = { _id?: string; name: string; relation: string; message: s
 export type MemorialUpdate = { _id?: string; title: string; date: string; location: string; description: string; imageUrl: string };
 export type Candle = { _id?: string; name: string; message: string; createdAt?: string };
 export type CandleSummary = { count: number; candles: Candle[] };
-export type Photo = { _id?: string; caption: string; date: string; location: string; imageUrl: string; order?: number };
+export type PhotoSection = 'home' | 'prix';
+export type Photo = { _id?: string; caption: string; date: string; location: string; imageUrl: string; order?: number; section?: PhotoSection };
 export type Laureate = { _id?: string; name: string; year: string; className: string; distinction: string; note: string; imageUrl: string };
 
 const TOKEN_KEY = 'memorial-family-token';

@@ -1,10 +1,10 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Award, Camera, Check, Eye, EyeOff, Flame, ImagePlus, KeyRound, LayoutDashboard, Loader2, LogOut, MapPin, MessageCircle, Newspaper, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { AlertCircle, Award, Camera, GalleryHorizontalEnd, Check, Eye, EyeOff, Flame, ImagePlus, KeyRound, LayoutDashboard, Loader2, LogOut, MapPin, MessageCircle, Newspaper, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { api, Candle, CandleSummary, compressImage, Laureate, MemorialUpdate, Photo, session, Tribute } from '../api';
 import { PhotoManager } from './PhotoManager';
 import { Flower } from '../components/Flower';
 
-type Tab = 'overview' | 'photos' | 'updates' | 'tributes' | 'candles' | 'laureates';
+type Tab = 'overview' | 'photos' | 'updates' | 'tributes' | 'candles' | 'laureates' | 'prixPhotos';
 type Notice = { kind: 'success' | 'error'; text: string } | null;
 
 const emptyUpdate: MemorialUpdate = { title: '', date: '', location: '', description: '', imageUrl: '' };
@@ -86,6 +86,7 @@ export function Family({ onDataChanged, onLeave }: { onDataChanged: () => void; 
   const [candles, setCandles] = useState<Candle[]>([]);
   const [candleCount, setCandleCount] = useState<number | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [prixPhotos, setPrixPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [updateForm, setUpdateForm] = useState<MemorialUpdate>(emptyUpdate);
@@ -100,14 +101,15 @@ export function Family({ onDataChanged, onLeave }: { onDataChanged: () => void; 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [u, t, l, p, c] = await Promise.all([
+      const [u, t, l, p, pp, c] = await Promise.all([
         api<MemorialUpdate[]>('/api/memorial/updates'),
         api<Tribute[]>('/api/memorial/admin/tributes', { auth: true }),
         api<Laureate[]>('/api/memorial/laureates'),
         api<Photo[]>('/api/memorial/photos'),
+        api<Photo[]>('/api/memorial/photos?section=prix'),
         api<CandleSummary>('/api/memorial/candles'),
       ]);
-      setUpdates(u); setTributes(t); setLaureates(l); setPhotos(p); setCandles(c.candles); setCandleCount(c.count);
+      setUpdates(u); setTributes(t); setLaureates(l); setPhotos(p); setPrixPhotos(pp); setCandles(c.candles); setCandleCount(c.count);
     } catch (error) { handleError(error); } finally { setLoading(false); }
   }, [handleError]);
 
@@ -197,6 +199,7 @@ export function Family({ onDataChanged, onLeave }: { onDataChanged: () => void; 
     ['tributes', 'Hommages', MessageCircle, tributes.length],
     ['candles', 'Bougies', Flame, candleCount],
     ['laureates', 'Lauréats du Prix', Award, laureates.length],
+    ['prixPhotos', 'Photos du Prix', GalleryHorizontalEnd, prixPhotos.length],
   ];
 
   return (
@@ -235,6 +238,7 @@ export function Family({ onDataChanged, onLeave }: { onDataChanged: () => void; 
               [Newspaper, updates.length, 'actualités en ligne', 'Programme, lieux, annonces', 'updates'],
               [Award, laureates.length, 'lauréats au palmarès', 'Prix d’Excellence et de Leadership', 'laureates'],
               [Camera, photos.length, 'photos commentées', 'Souvenirs racontés', 'photos'],
+              [GalleryHorizontalEnd, prixPhotos.length, 'photos du Prix', 'Cérémonies et lauréats', 'prixPhotos'],
               [Flame, candleCount ?? '—', 'bougies allumées', 'Par les visiteurs du site', 'candles'],
             ].map(([Icon, value, label, hint, target]) => {
               const I = Icon as typeof Flame;
@@ -253,6 +257,7 @@ export function Family({ onDataChanged, onLeave }: { onDataChanged: () => void; 
                   <li><b>Actualités</b> : annoncer une veillée, une messe, un lieu, avec une image du programme ou du plan.</li>
                   <li><b>Hommages</b> et <b>Bougies</b> : masquer ou supprimer un message inapproprié.</li>
                   <li><b>Lauréats</b> : ajouter chaque année les élèves récompensés par le Prix.</li>
+                  <li><b>Photos du Prix</b> : partager les images des cérémonies du Prix, chacune avec son commentaire.</li>
                 </ul>
               </div>
             </div>
@@ -260,6 +265,7 @@ export function Family({ onDataChanged, onLeave }: { onDataChanged: () => void; 
         )}
 
         {tab === 'photos' && <PhotoManager photos={photos} setPhotos={setPhotos} onDone={done} onError={handleError} />}
+        {tab === 'prixPhotos' && <PhotoManager key="prix" section="prix" photos={prixPhotos} setPhotos={setPrixPhotos} onDone={done} onError={handleError} />}
 
         {tab === 'candles' && (
           <div className="manage-list wide">

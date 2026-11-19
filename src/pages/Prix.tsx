@@ -3,6 +3,7 @@ import { Award, BookOpen, CalendarCheck, Crown, Download, FileText, GraduationCa
 import { api, Laureate } from '../api';
 import { PrizeEmblem } from '../components/PrizeEmblem';
 import { Lightbox } from '../components/Lightbox';
+import { StoryPhotos } from '../components/StoryPhotos';
 import { Divider, Flower } from '../components/Flower';
 import { useReveal } from '../hooks';
 
@@ -167,6 +168,15 @@ export function Prix({ email }: { email: string }) {
           </div>
         )}
       </section>
+
+      {/* Photos of the Prix (ceremonies, laureates), added from the family space */}
+      <StoryPhotos
+        section="prix"
+        className="prix-photos"
+        label="En images"
+        title="Les moments du Prix."
+        intro="Cérémonies, lauréats et remises de dotations : les moments forts du Prix, racontés par ceux qui les ont vécus."
+      />
 
       {/* Support */}
       <section className="prix-support" id="soutenir">

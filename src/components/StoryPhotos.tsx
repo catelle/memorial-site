@@ -1,16 +1,24 @@
 import { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CalendarDays, MapPin } from 'lucide-react';
-import { api, Photo } from '../api';
+import { api, Photo, PhotoSection } from '../api';
 import { useReveal } from '../hooks';
 import { Lightbox } from './Lightbox';
 import { Divider } from './Flower';
 
-/** "Souvenirs racontés": photos added by the family, each with the story behind it. */
-export function StoryPhotos() {
+type Props = { section?: PhotoSection; label?: string; title?: string; intro?: string; className?: string };
+
+/** Captioned photos added from the family space: "Souvenirs racontés" on the home page, "En images" on the Prix page. */
+export function StoryPhotos({
+  section = 'home',
+  label = 'Souvenirs racontés',
+  title = 'Chaque photo a son histoire.',
+  intro = 'Des moments partagés par ses proches, accompagnés des mots qui leur donnent leur sens.',
+  className = '',
+}: Props) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const close = useCallback(() => setOpen(null), []);
-  useEffect(() => { api<Photo[]>('/api/memorial/photos').then(setPhotos).catch(() => undefined); }, []);
+  useEffect(() => { api<Photo[]>(section === 'home' ? '/api/memorial/photos' : `/api/memorial/photos?section=${section}`).then(setPhotos).catch(() => undefined); }, [section]);
   useReveal([photos.length]);
   if (!photos.length) return null;
 
@@ -21,13 +29,13 @@ export function StoryPhotos() {
   };
 
   return (
-    <section className="story-photos">
+    <section className={`story-photos ${className}`.trim()}>
       <div className="layout">
         <div className="story-photos-head" data-reveal>
           <Divider />
-          <label>Souvenirs racontés</label>
-          <h2>Chaque photo a son histoire.</h2>
-          <p>Des moments partagés par ses proches, accompagnés des mots qui leur donnent leur sens.</p>
+          <label>{label}</label>
+          <h2>{title}</h2>
+          <p>{intro}</p>
         </div>
         <div className="story-photo-list">
           {photos.map((photo, i) => (
@@ -49,7 +57,7 @@ export function StoryPhotos() {
           ))}
         </div>
       </div>
-      <Lightbox images={photos.map(p => p.imageUrl)} initialIndex={open} onClose={close} label="Souvenirs racontés" caption={caption} variant="story" />
+      <Lightbox images={photos.map(p => p.imageUrl)} initialIndex={open} onClose={close} label={label} caption={caption} variant="story" />
     </section>
   );
 }

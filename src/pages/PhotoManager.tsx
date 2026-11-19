@@ -1,11 +1,24 @@
 import { useState } from 'react';
 import { AlertCircle, ArrowDown, ArrowUp, Check, ImagePlus, Loader2, Pencil, Trash2, Upload, X } from 'lucide-react';
-import { api, compressImage, Photo } from '../api';
+import { api, compressImage, Photo, PhotoSection } from '../api';
 
 type Draft = { key: string; imageData: string; caption: string; date: string; location: string; status: 'pending' | 'saving' | 'error'; error?: string };
 
+const intro: Record<PhotoSection, { title: string; text: string; empty: string }> = {
+  home: {
+    title: 'Chaque photo, avec son histoire',
+    text: 'Choisissez une ou plusieurs photos, puis écrivez pour chacune le commentaire qui l’accompagne : qui, quand, où, ce que ce moment représente. Elles apparaîtront sur la page d’accueil dans « Souvenirs racontés ».',
+    empty: 'Aucune photo commentée pour le moment.',
+  },
+  prix: {
+    title: 'Les moments du Prix d’Excellence',
+    text: 'Ajoutez les photos de la cérémonie, des lauréats ou de la remise des dotations, chacune avec son commentaire : qui, quelle édition, ce que ce moment représente. Elles apparaîtront sur la page du Prix dans « En images ».',
+    empty: 'Aucune photo du Prix pour le moment.',
+  },
+};
+
 /** Family-space tool: upload several photos at once, each with its own caption (the story behind it). */
-export function PhotoManager({ photos, setPhotos, onDone, onError }: { photos: Photo[]; setPhotos: (update: (current: Photo[]) => Photo[]) => void; onDone: (text: string) => void; onError: (error: unknown) => void }) {
+export function PhotoManager({ section = 'home', photos, setPhotos, onDone, onError }: { section?: PhotoSection; photos: Photo[]; setPhotos: (update: (current: Photo[]) => Photo[]) => void; onDone: (text: string) => void; onError: (error: unknown) => void }) {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [reading, setReading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -32,7 +45,7 @@ export function PhotoManager({ photos, setPhotos, onDone, onError }: { photos: P
     for (const draft of drafts) {
       patch(draft.key, { status: 'saving', error: undefined });
       try {
-        const saved = await api<Photo>('/api/memorial/photos', { method: 'POST', auth: true, body: { imageData: draft.imageData, caption: draft.caption, date: draft.date, location: draft.location } });
+        const saved = await api<Photo>('/api/memorial/photos', { method: 'POST', auth: true, body: { section, imageData: draft.imageData, caption: draft.caption, date: draft.date, location: draft.location } });
         setPhotos(current => [...current, saved]);
         setDrafts(current => current.filter(d => d.key !== draft.key));
         published += 1;
@@ -80,8 +93,8 @@ export function PhotoManager({ photos, setPhotos, onDone, onError }: { photos: P
     <div className="photo-manager">
       <div className="admin-card">
         <label>Ajouter des photos commentées</label>
-        <h2>Chaque photo, avec son histoire</h2>
-        <p>Choisissez une ou plusieurs photos, puis écrivez pour chacune le commentaire qui l’accompagne : qui, quand, où, ce que ce moment représente. Elles apparaîtront sur la page d’accueil dans « Souvenirs racontés ».</p>
+        <h2>{intro[section].title}</h2>
+        <p>{intro[section].text}</p>
         <label className="image-drop photo-drop">
           <input type="file" accept="image/*" multiple onChange={event => { addFiles(event.target.files); event.target.value = ''; }} />
           {reading ? <Loader2 size={22} className="spin" /> : <ImagePlus size={22} />}
@@ -113,7 +126,7 @@ export function PhotoManager({ photos, setPhotos, onDone, onError }: { photos: P
       </div>
 
       <div className="manage-list">
-        {photos.length === 0 && <p className="manage-empty">Aucune photo commentée pour le moment.</p>}
+        {photos.length === 0 && <p className="manage-empty">{intro[section].empty}</p>}
         {photos.map((photo, i) => {
           const edit = editing?._id === photo._id ? editing : null;
           return (

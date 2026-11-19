@@ -166,9 +166,13 @@ const photoMeta = row => {
   const { imageData, ...rest } = row;
   return { ...serialize(rest), imageUrl: `/api/memorial/photos/${row._id}/image?v=${new Date(row.updatedAt || row.createdAt).getTime()}` };
 };
+const photoSections = ['home', 'prix'];
+const photoSection = value => (photoSections.includes(value) ? value : 'home');
+// Photos created before sections existed have no `section` field: they belong to the home page.
+const sectionFilter = section => (section === 'home' ? { section: { $in: [null, 'home'] } } : { section });
 const validImage = value => typeof value === 'string' && /^data:image\/(jpeg|png|webp|gif);base64,/.test(value) && value.length <= MAX_IMAGE_CHARS;
-app.get('/api/memorial/photos', async (_req, res) => {
-  try { const rows = await (await collection('memorial_photos')).find({ status: 'published' }, { projection: { imageData: 0 } }).sort({ order: 1, createdAt: 1 }).toArray(); res.json(rows.map(photoMeta)); }
+app.get('/api/memorial/photos', async (req, res) => {
+  try { const rows = await (await collection('memorial_photos')).find({ status: 'published', ...sectionFilter(photoSection(req.query.section)) }, { projection: { imageData: 0 } }).sort({ order: 1, createdAt: 1 }).toArray(); res.json(rows.map(photoMeta)); }
   catch (error) { fail(res, error); }
 });
 app.get('/api/memorial/photos/:id/image', async (req, res) => {
@@ -186,9 +190,10 @@ app.post('/api/memorial/photos', requireAdmin, async (req, res) => {
   try {
     const doc = clean(photoFields, req.body);
     if (!validImage(req.body?.imageData)) return res.status(400).json({ message: 'Image manquante, invalide ou trop lourde.' });
+    const section = photoSection(req.body?.section);
     const now = new Date(); const photos = await collection('memorial_photos');
-    const last = await photos.find({}).sort({ order: -1 }).limit(1).toArray();
-    const result = await photos.insertOne({ ...doc, imageData: req.body.imageData, order: (last[0]?.order ?? 0) + 1, status: 'published', createdAt: now, updatedAt: now });
+    const last = await photos.find(sectionFilter(section)).sort({ order: -1 }).limit(1).toArray();
+    const result = await photos.insertOne({ ...doc, section, imageData: req.body.imageData, order: (last[0]?.order ?? 0) + 1, status: 'published', createdAt: now, updatedAt: now });
     res.status(201).json(photoMeta(await photos.findOne({ _id: result.insertedId }, { projection: { imageData: 0 } })));
   } catch (error) { fail(res, error); }
 });
